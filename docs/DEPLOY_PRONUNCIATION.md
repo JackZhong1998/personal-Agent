@@ -21,11 +21,27 @@
 
 ## 检查结果
 
-1. 服务地址加 `/health` 应返回 `ok: true`、`provider: edge-tts`、`generation: on-demand`。此操作不会生成语音。
+1. 服务地址加 `/health` 应返回 `ok: true`、`provider: edge-tts`、`version: 7.3.1`、`generation: on-demand`。此操作不会生成语音，也不代表微软上游已经连通。
 2. 没有访问密钥的 `/speak` 请求必须返回 401；这证明接口没有对外匿名开放。
 3. Vercel 重新部署后，进入章节，展开表达提示。**只有你点击读音按钮时才生成该句音频**；成功后由主应用存入 Supabase，后续点击复用缓存。
 
 免费实例空闲后可能休眠，首次调用会经历冷启动。如果读音按钮首次超时，等 Render 服务恢复运行后再试；当前主应用请求超时为 30 秒。角色语音仍由 Cartesia 单独提供，不依赖此服务。
+
+## 读音返回 502 时
+
+先检查 Render 最新部署是否为当前 GitHub 提交，以及 `/health` 的版本是否为 `7.3.1`。旧版 `7.2.7` 使用的微软请求校验协议已被新版替换。更新服务无需更换环境变量，已有主应用音频缓存继续复用。
+
+在 Render 服务 → Logs 中查找 `pronunciation_failed`。日志只记录错误类别、异常类型和上游 HTTP 状态，不记录对话、密钥或带签名的请求地址：
+
+| code | 含义 |
+| --- | --- |
+| `upstream_rejected` | 微软返回 401 / 403，需检查依赖版本及服务出口是否被拒绝。 |
+| `upstream_timeout` | 等待或生成超过 25 秒，服务返回 504。 |
+| `upstream_http_error` | 微软返回其他 HTTP 错误，查看同一行的 `upstream_status`。 |
+| `upstream_unavailable` | 网络、WebSocket 或其他上游异常，查看异常类型。 |
+| `empty_audio` | 上游没有返回有效音频。 |
+
+若没有上述日志但前端显示 502，检查 Render 的部署状态和网关错误。若显示 401，则检查 Vercel 与 Render 的 `EDGE_TTS_SECRET` 是否相同，并重新部署 Vercel。
 
 ## 当前交付状态
 

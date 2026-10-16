@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from aiohttp.test_utils import TestClient, TestServer
+from aiohttp import ClientResponseError
 
 
 class PronunciationTests(unittest.IsolatedAsyncioTestCase):
@@ -29,6 +30,7 @@ class PronunciationTests(unittest.IsolatedAsyncioTestCase):
             response = await self.client.get("/health")
             self.assertEqual(response.status, 200)
             self.assertEqual((await response.json())["generation"], "on-demand")
+            self.assertEqual((await response.json())["version"], "7.3.1")
             provider.assert_not_called()
 
     async def test_missing_or_wrong_secret_cannot_generate(self):
@@ -59,10 +61,37 @@ class PronunciationTests(unittest.IsolatedAsyncioTestCase):
             provider.assert_called_once_with("Hello.", "en-US-AriaNeural")
 
     async def test_upstream_failure_does_not_expose_provider_details(self):
-        with patch.object(self.service.edge_tts, "Communicate", side_effect=RuntimeError("private-details")):
+        with patch.object(self.service.edge_tts, "Communicate", side_effect=RuntimeError("private-details")), self.assertLogs("pronunciation", level="WARNING") as logs:
             response = await self.client.post("/speak", json={"text": "Hello."}, headers=self.headers)
             self.assertEqual(response.status, 502)
             self.assertNotIn("private-details", await response.text())
+        self.assertNotIn("private-details", " ".join(logs.output))
+        self.assertIn("upstream_unavailable", " ".join(logs.output))
+
+    async def test_upstream_rejection_logs_status_without_signed_url(self):
+        error = ClientResponseError(None, (), status=403, message="private-token")
+        with patch.object(self.service.edge_tts, "Communicate", side_effect=error), self.assertLogs("pronunciation", level="WARNING") as logs:
+            response = await self.client.post("/speak", json={"text": "Hello."}, headers=self.headers)
+            self.assertEqual(response.status, 502)
+            self.assertEqual((await response.json())["code"], "upstream_rejected")
+        self.assertIn("upstream_status=403", " ".join(logs.output))
+        self.assertNotIn("private-token", " ".join(logs.output))
+
+    async def test_timeout_is_identified(self):
+        with patch.object(self.service.edge_tts, "Communicate", side_effect=TimeoutError()), self.assertLogs("pronunciation", level="WARNING"):
+            response = await self.client.post("/speak", json={"text": "Hello."}, headers=self.headers)
+            self.assertEqual(response.status, 504)
+            self.assertEqual((await response.json())["code"], "upstream_timeout")
+
+    async def test_empty_provider_audio_is_a_service_error(self):
+        class EmptyVoice:
+            async def stream(self):
+                yield {"type": "audio", "data": b""}
+
+        with patch.object(self.service.edge_tts, "Communicate", return_value=EmptyVoice()), self.assertLogs("pronunciation", level="WARNING"):
+            response = await self.client.post("/speak", json={"text": "Hello."}, headers=self.headers)
+            self.assertEqual(response.status, 502)
+            self.assertEqual((await response.json())["code"], "empty_audio")
 
     async def test_public_bind_requires_a_secret(self):
         spec = importlib.util.spec_from_file_location(
