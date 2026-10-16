@@ -5,7 +5,7 @@ import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {chapters,localDay,relationship,reward,interactionReward,emptyProgress,STORY_ID,type Completion} from '../lib/story';
 import {scripts,personalize,SCRIPT_VERSION} from '../lib/scripts';
-import {displayNameSchema,settle,progress as readProgress,type Session} from '../lib/conversation';
+import {displayNameSchema,settle,view,progress as readProgress,type Session} from '../lib/conversation';
 import {access} from 'node:fs/promises';
 import {AppError,getAudio,getRecord,locked,putAudio,putRecord,sameOrigin} from '../lib/server';
 import {speech} from '../lib/speech';
@@ -15,7 +15,7 @@ before(async()=>{data=await mkdtemp(path.join(tmpdir(),'between-test-'));process
 after(async()=>{await rm(data,{recursive:true,force:true});delete process.env.DATA_DIR;});
 test('all twelve chapters contain twenty authored interactions, translations, names, and three local pictures',async()=>{
   assert.equal(chapters.length,12);
-  for(const c of chapters){const script=scripts[c.id];assert.equal(script.length,21);assert.equal(script.filter(t=>t.image).length,3);assert.ok(script.some(t=>t.line.includes('{{name}}')));for(const t of script.slice(0,-1)){assert.equal(t.suggestions.length,2);assert.ok(t.line.length>20);assert.ok(t.cue);assert.ok(t.translation.length>5);if(t.image)await access(path.join(process.cwd(),'public',t.image.src));}assert.equal(script.at(-1)!.suggestions.length,0);}
+  for(const c of chapters){const script=scripts[c.id];assert.equal(script.length,21);assert.equal(script.filter(t=>t.image).length,3);assert.ok(script.some(t=>t.line.includes('{{name}}')));for(const t of script.slice(0,-1)){assert.equal(t.suggestions.length,2);assert.equal(t.suggestionTranslations.length,2);for(const zh of t.suggestionTranslations)assert.match(zh,/[\p{Script=Han}]/u);assert.ok(t.line.length>20);assert.ok(t.cue);assert.ok(t.translation.length>5);if(t.image)await access(path.join(process.cwd(),'public',t.image.src));}assert.equal(script.at(-1)!.suggestions.length,0);}
 });
 test('daily chapter bonuses stop after two; interaction rewards continue and duplicates never pay twice',()=>{
  const done:Completion[]=[];const day='2026-10-16';
@@ -83,4 +83,17 @@ test('personalized voice caches are private to their owners',async()=>{
  globalThis.fetch=async()=>{calls++;return new Response(new Uint8Array(100),{headers:{'Content-Type':'audio/mpeg'}});};
  try{const a=await speech('Hey, Jamie.','role','owner-a'),b=await speech('Hey, Jamie.','role','owner-b');assert.ok(a.key.startsWith('owner-a/'));assert.ok(b.key.startsWith('owner-b/'));assert.notEqual(a.key,b.key);assert.equal((await speech('Hey, Jamie.','role','owner-a')).cached,true);assert.equal(calls,2);}
  finally{globalThis.fetch=original;if(oldKey===undefined)delete process.env.CARTESIA_API_KEY;else process.env.CARTESIA_API_KEY=oldKey;}
+});
+
+ test('conversation responses include personalized bilingual messages and authored reply meanings',()=>{
+ const s:Session={id:'view-session',chapterId:chapters[0].id,displayName:'Jamie',index:3,version:SCRIPT_VERSION,audioKey:'test3',audioKeys:['test0','test1','test2','test3'],recordings:[],createdAt:new Date().toISOString(),completed:false};
+ const result=view(s,emptyProgress());assert.equal(result.messages.length,4);assert.ok(result.messages[3].line.includes('Jamie'));assert.ok(result.messages[3].translation.includes('Jamie'));assert.deepEqual(result.suggestionTranslations,['我是第一次来。','我喜欢窗边的角落。']);assert.ok(!JSON.stringify(result).includes('{{name}}'));
+ });
+
+test('Supabase playback reads storage once without a metadata round trip and preserves missing-audio errors',async()=>{
+ const original=globalThis.fetch,oldUrl=process.env.SUPABASE_URL,oldKey=process.env.SUPABASE_SERVICE_ROLE_KEY;
+ process.env.SUPABASE_URL='https://storage.example';process.env.SUPABASE_SERVICE_ROLE_KEY='local-test-placeholder';let calls=0;
+ globalThis.fetch=async(input)=>{calls++;assert.equal(input,'https://storage.example/storage/v1/object/authenticated/between-audio/public/test.mp3');return new Response(new Uint8Array(100),{headers:{'Content-Type':'audio/mpeg'}});};
+ try{const result=await getAudio('public/test.mp3');assert.equal(result.mime,'audio/mpeg');assert.equal(result.bytes.length,100);assert.equal(calls,1);globalThis.fetch=async()=>new Response('',{status:404});await assert.rejects(()=>getAudio('public/missing.mp3'),(e:unknown)=>e instanceof AppError&&e.status===404);}
+ finally{globalThis.fetch=original;if(oldUrl===undefined)delete process.env.SUPABASE_URL;else process.env.SUPABASE_URL=oldUrl;if(oldKey===undefined)delete process.env.SUPABASE_SERVICE_ROLE_KEY;else process.env.SUPABASE_SERVICE_ROLE_KEY=oldKey;}
 });

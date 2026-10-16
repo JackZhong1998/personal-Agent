@@ -24,8 +24,8 @@ export async function getSession(owner:string,id:string){
 export function view(s:Session,p:Progress){
  const t=scripts[s.chapterId][s.index];
  const url=(key:string)=>'/api/audio?key='+encodeURIComponent(key);
- return {id:s.id,chapterId:s.chapterId,displayName:s.displayName,index:s.index,total:scripts[s.chapterId].length-1,audioUrl:url(s.audioKey),completed:s.completed,cue:t.cue,suggestions:t.suggestions,
-  messages:s.audioKeys.map((key,index)=>({index,audioUrl:url(key),image:scripts[s.chapterId][index].image})),
+ return {id:s.id,chapterId:s.chapterId,displayName:s.displayName,index:s.index,total:scripts[s.chapterId].length-1,audioUrl:url(s.audioKey),completed:s.completed,cue:t.cue,suggestions:t.suggestions,suggestionTranslations:t.suggestionTranslations,
+  messages:s.audioKeys.map((key,index)=>{const turn=renderedTurn(s,index);return {index,audioUrl:url(key),line:turn.line,translation:turn.translation,image:turn.image};}),
   recordings:s.recordings.map(r=>({audioUrl:url(r.key),duration:r.duration})),progress:p,relationship:relationship(p)};
 }
 // Call under the owner's progress lease. Reconcile every persisted turn so a

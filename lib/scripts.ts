@@ -1,7 +1,8 @@
 import {authored} from './rose-content';
+import {replyTranslations} from './reply-translations';
 export const SCRIPT_VERSION='rose-2026-10-16.1';
 export type StoryImage={src:string;alt:string;caption:string};
-export type ScriptTurn={line:string;translation:string;cue:string;suggestions:string[];image?:StoryImage};
+export type ScriptTurn={line:string;translation:string;cue:string;suggestions:string[];suggestionTranslations:string[];image?:StoryImage};
 const postcards:Record<string,[string,string,string]>={
  'rose-first-coffee':['coffee','flowers','coffee'], 'rose-walk-home':['sunset','river','sunset'],
  'rose-studio':['studio','studio','night'], 'rose-rain':['rain','coffee','rain'],
@@ -17,7 +18,9 @@ export const scripts:Record<string,ScriptTurn[]>=Object.fromEntries(Object.entri
   const line=named?'{{name}}, '+(original.startsWith('I')?original:original[0].toLowerCase()+original.slice(1)):original;
   const imageIndex=[5,12,16].indexOf(index);
   const asset=postcards[id][Math.max(0,imageIndex)];
-  return {line,translation:named?'{{name}}，'+zh:zh,cue,suggestions,
+  const suggestionTranslations=replyTranslations[id].trim().split('\n')[index]?.split('|')||[];
+  if(suggestions.length!==suggestionTranslations.length)throw new Error(`Missing reply translations: ${id}/${index}`);
+  return {line,translation:named?'{{name}}，'+zh:zh,cue,suggestions,suggestionTranslations,
    ...(imageIndex>=0?{image:{src:'/postcards/'+asset+'.svg',alt:cue+' · 剧情场景插画',caption:index===12?'a little corner of my day ♡':'thought you might like this ♡'}}:{})};
  })
 ]));

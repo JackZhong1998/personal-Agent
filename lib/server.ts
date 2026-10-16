@@ -23,11 +23,12 @@ export function required(name: string) {
 export function requireStorage() {
   if (production() && !configuredStore()) throw new AppError(503, '线上语音存储尚未配置，请先连接 Supabase。');
 }
-export async function db(route: string, init: RequestInit = {}) {
+export async function db(route: string, init: RequestInit = {}, missingMessage?:string) {
   const response = await fetch(`${required('SUPABASE_URL').replace(/\/$/, '')}${route}`, {
     ...init, cache: 'no-store', signal: AbortSignal.timeout(15000),
     headers: { apikey: required('SUPABASE_SERVICE_ROLE_KEY'), Authorization: `Bearer ${required('SUPABASE_SERVICE_ROLE_KEY')}`, ...init.headers }
   });
+  if(response.status===404&&missingMessage)throw new AppError(404,missingMessage);
   if (!response.ok) throw new AppError(503, `数据库或存储不可用（${response.status}），请检查 Supabase 初始化与权限。`);
   return response;
 }
@@ -62,9 +63,16 @@ export async function putAudio(key: string, bytes: Uint8Array, mime: string) {
 }
 export async function getAudio(key: string) {
   safeKey(key);
+  requireStorage();
+  if(configuredStore()) {
+    // Storage already returns the MIME type. Avoid a separate database read
+    // before every playback; the audio route checks ownership before this call.
+    const response=await db('/storage/v1/object/authenticated/between-audio/'+key,{},'这段语音还没有生成');
+    return {bytes:Buffer.from(await response.arrayBuffer()),mime:response.headers.get('content-type')||'audio/mpeg'};
+  }
   const meta = await getRecord<{mime:string}>('audio-meta/'+key);
   if (!meta) throw new AppError(404,'这段语音还没有生成');
-  const bytes = configuredStore() ? Buffer.from(await (await db('/storage/v1/object/authenticated/between-audio/'+key)).arrayBuffer()) : await readFile(path.join(root(),'audio',key));
+  const bytes = await readFile(path.join(root(),'audio',key));
   return {bytes,mime:meta.mime};
 }
 export async function identity() {
