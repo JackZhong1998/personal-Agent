@@ -1,9 +1,9 @@
 import { AppError, getRecord, hash, locked, putAudio, putRecord, required } from './server';
-export async function speech(text:string, kind:'role'|'guide') {
+export async function speech(text:string, kind:'role'|'guide', owner?:string) {
   const model=process.env.CARTESIA_MODEL||'sonic-3.6';
   const voice=process.env.CARTESIA_VOICE_ID||'afb402ce-7a39-49cf-acb5-3ff42e4e224f';
   const version=process.env.CARTESIA_VERSION||'2026-08-14';
-  const key='public/'+hash(JSON.stringify({text,kind,model:kind==='role'?model:'edge-tts',voice:kind==='role'?voice:'en-US-AriaNeural',version:kind==='role'?version:'7.2.7',format:'mp3-44100-128000'}))+'.mp3';
+  const key=(owner?owner+'/speech/':'public/')+hash(JSON.stringify({text,kind,model:kind==='role'?model:'edge-tts',voice:kind==='role'?voice:'en-US-AriaNeural',version:kind==='role'?version:'7.2.7',format:'mp3-44100-128000'}))+'.mp3';
   const cached=await getRecord<{mime:string}>('audio-meta/'+key);
   if(cached) return {key,cached:true};
   return locked('speech-'+hash(key),async()=>{

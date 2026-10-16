@@ -114,7 +114,7 @@ export async function quota(owner:string) {
   return locked('quota-'+owner,async()=>{
     const key=owner+'/quota/'+new Date().toISOString().slice(0,10);
     const used=(await getRecord<number>(key))||0;
-    if(used>=120) throw new AppError(429,'今天的语音调用已达上限，明天再继续吧。');
+    if(used>=240) throw new AppError(429,'今天的语音调用已达上限，明天再继续吧。');
     await putRecord(key,used+1);
   });
 }

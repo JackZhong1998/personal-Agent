@@ -3,9 +3,10 @@ import '@fontsource/dm-sans/400.css';
 import '@fontsource/dm-sans/500.css';
 import '@fontsource/dm-sans/600.css';
 import './globals.css';
+import './rose.css';
 export const metadata: Metadata = {
-  title: 'Between 之间 · 让每一次开口，都更靠近',
-  description: '每天两个生活章节，用英语认识一个人，也慢慢认识更自信的自己。语音英语陪伴体验。',
+  title: 'Between · ROSÉ 平行心动',
+  description: 'ROSÉ 非官方虚构同人语音故事。从相识到相恋，十二章日常、语音和场景插画。合成配音，与本人及所属团队无关联。',
   icons: { icon: '/icon.svg' }
 };
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#f8f7f3' };
