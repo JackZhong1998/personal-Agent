@@ -1,0 +1,6 @@
+.env
+.env.*
+.venv
+__pycache__
+*.pyc
+test_pronunciation.py

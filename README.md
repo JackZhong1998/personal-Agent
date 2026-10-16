@@ -80,7 +80,7 @@ npm run edge-tts
 
 1. 将代码推送到你的仓库；在 Vercel 导入，Framework 为 Next.js。使用 Node 24，`npm ci`、`npm run build`，已附 `vercel.json`。
 2. 设置上述服务端环境变量，部署前执行 Supabase SQL。应用本身没有登录或支付集成。
-3. 单独部署 `services/` 的 Python 读音服务到支持 Python 长驻进程与外出 WebSocket 的容器平台。可使用 `services/Dockerfile`，设置 `HOST=0.0.0.0`、`PORT` 和 `EDGE_TTS_SECRET`，通过 HTTPS 提供地址。Next API 代理访问，前端不直接接触该服务凭证。
+3. 单独部署 `services/` 的 Python 读音服务。已提供 [Render 一键部署配置](https://render.com/deploy?repo=https://github.com/JackZhong1998/personal-Agent)：平台自动生成 `EDGE_TTS_SECRET`，无需自己编造。操作和取值位置见 [读音服务部署说明](docs/DEPLOY_PRONUNCIATION.md)。也可在其他容器平台使用 `services/Dockerfile`，设置 `HOST=0.0.0.0`、`PORT` 和安全密钥，通过 HTTPS 提供地址。Next API 代理访问，前端不直接接触该服务凭证。
 4. 配置 Vercel 的 `EDGE_TTS_URL` 和相同 `EDGE_TTS_SECRET`。**`127.0.0.1:8001` 仅用于本地，线上不能继续使用这个地址。**
 5. 真实手机通过 HTTPS 测试麦克风、录音上传、播放和回忆恢复。Vercel 的 Serverless 请求不能依赖常驻 Python 子进程，因此首版将读音服务独立部署。
 
@@ -96,6 +96,7 @@ npm run test
 npm run test:e2e
 npm run build
 .venv/bin/pip check
+.venv/bin/python -m unittest discover -s services -p 'test_*.py' -v
 ```
 
 单元测试检查章节内容、奖励封顶与去重、时区、并发锁、持久化、同源限制、合成缓存与失败重试；浏览器测试在桌面和手机尺寸检查页面、锁定章节、首次流程、缺少配置和四轮录音。**自动化用模拟提供商与测试音频，不调用付费 TTS，不代表外部服务账号、声音权限或 Supabase 已验证。**
