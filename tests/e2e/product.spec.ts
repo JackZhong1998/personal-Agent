@@ -55,3 +55,22 @@ test('twenty voice interactions show names, Chinese translations, pictures and a
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.locator('.story-complete-card').getByRole('button',{name:'返回故事'}).click();await expect(page.getByRole('heading',{name:'你好，Jamie'})).toBeVisible();
 });
 test('dashboard visual checkpoint',async({page},info)=>{await page.goto('/');await expect(page.locator('.hero-card')).toBeVisible();await page.screenshot({path:`test-results/home-${info.project.name}.png`,fullPage:true});});
+
+test('failed pronunciation offers explicit system speech without claiming a saved audio file',async({page})=>{
+ const id='22222222-2222-4222-8222-222222222222',p=emptyProgress(),turn=scripts[first.id][0];let guideCalls=0;
+ await page.addInitScript(()=>{
+  const history:{texts:string[];cancels:number}={texts:[],cancels:0};Object.assign(window,{systemSpeechTest:history});
+  Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{getVoices:()=>[],cancel:()=>{history.cancels++;},speak:(u:SpeechSynthesisUtterance)=>{history.texts.push(u.text);}}});
+ });
+ const wav=Buffer.alloc(44+3200);wav.write('RIFF');wav.writeUInt32LE(wav.length-8,4);wav.write('WAVE',8);wav.write('fmt ',12);wav.writeUInt32LE(16,16);wav.writeUInt16LE(1,20);wav.writeUInt16LE(1,22);wav.writeUInt32LE(16000,24);wav.writeUInt32LE(32000,28);wav.writeUInt16LE(2,32);wav.writeUInt16LE(16,34);wav.write('data',36);wav.writeUInt32LE(3200,40);
+ await page.route('**/system-test.wav',r=>r.fulfill({contentType:'audio/wav',body:wav}));
+ await page.route('**/api/conversation/start',r=>r.fulfill({json:{id,chapterId:first.id,displayName:'Jamie',index:0,total:20,audioUrl:'/system-test.wav',completed:false,cue:turn.cue,suggestions:turn.suggestions,suggestionTranslations:turn.suggestionTranslations,messages:[{index:0,audioUrl:'/system-test.wav',line:turn.line,translation:turn.translation}],recordings:[],progress:p,relationship:relationship(p),feedback:null}}));
+ await page.route('**/api/guide',r=>{guideCalls++;return r.fulfill({status:502,json:{error:'读音上游拒绝连接，可重试或使用系统朗读',code:'guide_upstream_rejected'}});});
+ await page.goto('/');await page.getByRole('button',{name:'开启第一章',exact:true}).click();await page.getByPlaceholder('你的名字，或希望她叫你的昵称').fill('Jamie');await page.getByRole('checkbox').check();await page.getByRole('button',{name:'准备好认识 ROSÉ 了'}).click();await page.getByRole('button',{name:'进入语音章节'}).click();
+ await page.getByRole('button',{name:'打开表达提示'}).click();await page.getByRole('button',{name:'听推荐表达 1 的读音'}).click();await expect(page.getByRole('button',{name:'系统朗读',exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>(window as unknown as {systemSpeechTest:{texts:string[]}}).systemSpeechTest.texts)).toEqual([]);
+ await page.getByRole('button',{name:'系统朗读',exact:true}).click();await expect(page.getByText('系统朗读 · 未保存音频',{exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>(window as unknown as {systemSpeechTest:{texts:string[]}}).systemSpeechTest.texts)).toEqual([turn.suggestions[0]]);expect(guideCalls).toBe(1);
+ const before=await page.evaluate(()=>(window as unknown as {systemSpeechTest:{cancels:number}}).systemSpeechTest.cancels);
+ await page.getByRole('button',{name:'暂停当前播放'}).click();expect(await page.evaluate(()=>(window as unknown as {systemSpeechTest:{cancels:number}}).systemSpeechTest.cancels)).toBeGreaterThan(before);
+});

@@ -97,3 +97,21 @@ test('Supabase playback reads storage once without a metadata round trip and pre
  try{const result=await getAudio('public/test.mp3');assert.equal(result.mime,'audio/mpeg');assert.equal(result.bytes.length,100);assert.equal(calls,1);globalThis.fetch=async()=>new Response('',{status:404});await assert.rejects(()=>getAudio('public/missing.mp3'),(e:unknown)=>e instanceof AppError&&e.status===404);}
  finally{globalThis.fetch=original;if(oldUrl===undefined)delete process.env.SUPABASE_URL;else process.env.SUPABASE_URL=oldUrl;if(oldKey===undefined)delete process.env.SUPABASE_SERVICE_ROLE_KEY;else process.env.SUPABASE_SERVICE_ROLE_KEY=oldKey;}
 });
+
+test('guide failures distinguish upstream rejections, gateway HTML, credentials and timeouts without caching failures',async()=>{
+ const original=globalThis.fetch,oldUrl=process.env.EDGE_TTS_URL,oldSecret=process.env.EDGE_TTS_SECRET;
+ process.env.EDGE_TTS_URL='https://guide.example';process.env.EDGE_TTS_SECRET='local-placeholder';
+ const cases=[{status:502,body:JSON.stringify({code:'upstream_rejected',error:'private-token'}),code:'guide_upstream_rejected'},{status:502,body:'<html>private-token</html>',code:'guide_gateway_error'},{status:401,body:'private-token',code:'guide_auth'}];
+ try{
+  for(const [i,c] of cases.entries()){
+   globalThis.fetch=async()=>new Response(c.body,{status:c.status});
+   await assert.rejects(()=>speech('Failure classification '+i,'guide'),(e:unknown)=>e instanceof AppError&&e.code===c.code&&!e.message.includes('private-token'));
+  }
+  globalThis.fetch=async()=>{throw new DOMException('private-token','TimeoutError');};
+  await assert.rejects(()=>speech('Timeout classification','guide'),(e:unknown)=>e instanceof AppError&&e.code==='guide_timeout'&&!e.message.includes('private-token'));
+  globalThis.fetch=async()=>new Response(new Uint8Array(100),{headers:{'Content-Type':'audio/mpeg'}});
+  assert.equal((await speech('Failure classification 0','guide')).cached,false);
+  globalThis.fetch=async()=>{throw new Error('cache must avoid requests');};
+  assert.equal((await speech('Failure classification 0','guide')).cached,true);
+ }finally{globalThis.fetch=original;if(oldUrl===undefined)delete process.env.EDGE_TTS_URL;else process.env.EDGE_TTS_URL=oldUrl;if(oldSecret===undefined)delete process.env.EDGE_TTS_SECRET;else process.env.EDGE_TTS_SECRET=oldSecret;}
+});

@@ -5,7 +5,7 @@ import path from 'node:path';
 import { z } from 'zod';
 
 export class AppError extends Error {
-  constructor(public status: number, message: string) { super(message); }
+  constructor(public status: number, message: string, public code?:string) { super(message); }
 }
 export const hash = (value: string) => createHash('sha256').update(value).digest('hex');
 const production = () => process.env.NODE_ENV === 'production';
@@ -129,7 +129,7 @@ export async function quota(owner:string) {
 export async function route(fn:()=>Promise<Response>) {
   try { return await fn(); }
   catch(e) {
-    if(e instanceof AppError) return Response.json({error:e.message},{status:e.status});
+    if(e instanceof AppError) return Response.json({error:e.message,...(e.code?{code:e.code}:{})},{status:e.status});
     if(e instanceof z.ZodError) return Response.json({error:'请求参数不正确'},{status:400});
     // Provider bodies, credentials and recordings never enter logs.
     console.error('between request failed:', e instanceof Error ? e.name : 'UnknownError');

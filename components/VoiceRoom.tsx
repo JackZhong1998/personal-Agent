@@ -13,6 +13,8 @@ export function VoiceRoom({session:s,onSession,onClose,onProgress}:{session:Conv
  const chapter=chapters.find(c=>c.id===s.chapterId)!;
  const [playing,setPlaying]=useState<string|null>(null),[recording,setRecording]=useState(false),[seconds,setSeconds]=useState(0),[busy,setBusy]=useState(false);
  const [hints,setHints]=useState(false),[error,setError]=useState(''),[guideBusy,setGuideBusy]=useState<number|null>(null);
+ const [failedGuide,setFailedGuide]=useState<number|null>(null),[systemNote,setSystemNote]=useState('');
+ const utterance=useRef<SpeechSynthesisUtterance|null>(null);
  const [pending,setPending]=useState<{blob:Blob;duration:number}|null>(null);
  const [pendingUrl,setPendingUrl]=useState(''),[waitSeconds,setWaitSeconds]=useState(0);
  const guideCache=useRef(new Map<string,string>());
@@ -22,13 +24,16 @@ export function VoiceRoom({session:s,onSession,onClose,onProgress}:{session:Conv
  const timer=useRef<ReturnType<typeof setInterval>|null>(null),context=useRef<AudioContext|null>(null),frame=useRef(0),alive=useRef(true),cancel=useRef(false),played=useRef('');
  const cleanupCapture=useCallback(()=>{if(timer.current)clearInterval(timer.current);timer.current=null;cancelAnimationFrame(frame.current);stream.current?.getTracks().forEach(t=>t.stop());stream.current=null;void context.current?.close().catch(()=>{});context.current=null;},[]);
  const playAudio=useCallback(async(url:string,key:string)=>{
+  utterance.current=null;if('speechSynthesis' in window)window.speechSynthesis.cancel();
   setError('');if(player.current){player.current.pause();player.current.src='';}
   const p=new Audio(url);player.current=p;setPlaying(key);
   p.onended=()=>{if(alive.current&&player.current===p)setPlaying(null);};
   p.onerror=()=>{if(alive.current&&player.current===p){setPlaying(null);setError('这段声音没能播放，请再点一次播放按钮。');}};
   try{await p.play();}catch{if(alive.current&&player.current===p){setPlaying(null);setError('浏览器需要你点一下播放按钮，才能听见这段声音。');}}
  },[]);
- function pause(){player.current?.pause();setPlaying(null);}
+ function pause(){utterance.current=null;if('speechSynthesis' in window)window.speechSynthesis.cancel();player.current?.pause();setPlaying(null);}
+ useEffect(()=>{setFailedGuide(null);setSystemNote('');},[s.index]);
+ useEffect(()=>()=>{utterance.current=null;if('speechSynthesis' in window)window.speechSynthesis.cancel();},[]);
  useEffect(()=>{if(played.current!==s.audioUrl){played.current=s.audioUrl;void playAudio(s.audioUrl,'role:'+s.index);}},[s.audioUrl,s.index,playAudio]);
  useEffect(()=>{const el=feed.current;if(el)el.scrollTop=el.scrollHeight;},[s.index,pendingUrl,busy]);
  useEffect(()=>{if(!celebration)return;const t=setTimeout(()=>setCelebration(null),2200);return()=>clearTimeout(t);},[celebration]);
@@ -68,9 +73,19 @@ export function VoiceRoom({session:s,onSession,onClose,onProgress}:{session:Conv
  useEffect(()=>{if(!pending){setPendingUrl('');return;}const url=URL.createObjectURL(pending.blob);setPendingUrl(url);return()=>URL.revokeObjectURL(url);},[pending]);
  useEffect(()=>{if(!busy){setWaitSeconds(0);return;}const start=Date.now();const tick=setInterval(()=>setWaitSeconds(Math.floor((Date.now()-start)/1000)),1000);return()=>clearInterval(tick);},[busy]);
  async function guide(i:number){
-  const key=s.index+':'+i;setGuideBusy(i);setError('');
+  const key=s.index+':'+i;setGuideBusy(i);setError('');setFailedGuide(null);setSystemNote('');
   try{let url=guideCache.current.get(key);if(!url){const result=await jsonRequest<{audioUrl:string}>('/api/guide',{sessionId:s.id,index:s.index,suggestion:i});url=result.audioUrl;guideCache.current.set(key,url);}if(alive.current)await playAudio(url,'guide:'+i);}
-  catch(e){if(alive.current)setError((e as Error).message);}finally{if(alive.current)setGuideBusy(null);}
+  catch(e){if(alive.current){setError((e as Error).message);setFailedGuide(i);}}finally{if(alive.current)setGuideBusy(null);}
+ }
+ function systemGuide(i:number){
+  pause();setError('');setSystemNote('');
+  if(!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance==='undefined'){setError('当前浏览器不支持系统朗读，请重试读音服务。');return;}
+  const u=new SpeechSynthesisUtterance(s.suggestions[i]);u.lang='en-US';u.rate=.9;
+  const voices=window.speechSynthesis.getVoices();u.voice=voices.find(v=>v.lang.toLowerCase()==='en-us'&&v.localService)||voices.find(v=>/^en[-_]/i.test(v.lang))||null;
+  utterance.current=u;setPlaying('system:'+i);setFailedGuide(null);setSystemNote('系统朗读 · 未保存音频');
+  u.onend=()=>{if(alive.current&&utterance.current===u){utterance.current=null;setPlaying(null);}};
+  u.onerror=()=>{if(alive.current&&utterance.current===u){utterance.current=null;setPlaying(null);setSystemNote('');setFailedGuide(i);setError('系统朗读未能播放，请重试或检查手机的英文语音设置。');}};
+  window.speechSynthesis.speak(u);
  }
  const rel=s.relationship;
  return <div className="voice-room" ref={room} tabIndex={-1} role="dialog" aria-modal="true" aria-label={`语音章节：${chapter.title}`}>
@@ -88,7 +103,8 @@ export function VoiceRoom({session:s,onSession,onClose,onProgress}:{session:Conv
    {s.completed&&<div className="story-complete-card"><Check size={26}/><h2>本章已完成</h2><p>20 次互动 · 进度已保存</p><button className="primary-button" onClick={onClose}>返回故事<ArrowRight size={16}/></button></div>}
    </div>
    <div className="chat-composer">
-    {error&&<div className="error-message" role="alert">{error}{pending&&!busy&&<button onClick={()=>void send(pending.blob,pending.duration)}>重试发送<Send size={14}/></button>}</div>}
+    {error&&<div className="error-message" role="alert">{error}{failedGuide!==null&&<div className="guide-recovery"><button disabled={guideBusy!==null||recording||busy} onClick={()=>void guide(failedGuide)}>重试读音</button><button disabled={recording||busy} onClick={()=>systemGuide(failedGuide)}>系统朗读</button></div>}{pending&&!busy&&<button onClick={()=>void send(pending.blob,pending.duration)}>重试发送<Send size={14}/></button>}</div>}
+    {systemNote&&<p className="system-voice-note" role="status">{systemNote}</p>}
     {!s.completed&&<>
      {hints&&<section className="reply-hints" aria-label="推荐回复"><header><strong>可以这样说</strong><button className="icon-button" onClick={()=>setHints(false)} aria-label="收起表达提示"><X size={17}/></button></header>{s.suggestions.map((text,i)=><div className="hint-line" key={text}><div><p lang="en">{text}</p><p className="hint-chinese" lang="zh-CN">{s.suggestionTranslations[i]}</p></div><button disabled={guideBusy!==null||recording||busy} onClick={()=>void guide(i)} aria-label={`听推荐表达 ${i+1} 的读音`}>{guideBusy===i?<span className="spinner"/>:<Volume2 size={19}/>}</button></div>)}</section>}
      <div className="composer-controls"><button className={'composer-hint-button '+(hints?'active':'')} disabled={recording||busy} aria-label="打开表达提示" aria-expanded={hints} onClick={()=>setHints(!hints)}><MessageCircle size={20}/><span>提示</span></button><button className={'record-button '+(recording?'recording':'')} disabled={busy||guideBusy!==null} onClick={()=>recording?(recorder.current?.state==='recording'&&recorder.current.stop()):void startRecording()} aria-label={recording?'结束录音并发送':'开始录音'}>{busy?<span className="spinner"/>:recording?<Square size={19} fill="currentColor"/>:<Mic size={21}/>}<span>{busy?'正在回复…':recording?`发送 · ${seconds}″`:'点击说话'}</span></button><button className="composer-hint-button" disabled={recording||busy} onClick={()=>playing?pause():void playAudio(s.audioUrl,'role:'+s.index)} aria-label={playing?'暂停当前播放':'重听最新语音'}>{playing?<Pause size={20}/>:<Headphones size={20}/>}<span>{playing?'暂停':'重听'}</span></button></div>
