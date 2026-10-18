@@ -4,9 +4,8 @@ import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
 
-export class AppError extends Error {
-  constructor(public status: number, message: string, public code?:string) { super(message); }
-}
+import {AppError} from './errors';
+export {AppError} from './errors';
 export const hash = (value: string) => createHash('sha256').update(value).digest('hex');
 const production = () => process.env.NODE_ENV === 'production';
 const configuredStore = () => Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);

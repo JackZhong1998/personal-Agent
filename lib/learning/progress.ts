@@ -1,0 +1,50 @@
+import {lessons,lessonSteps,wordQuestion,COURSE_ID,COMPANION} from './content';
+import {localDay} from '../story';
+import {AppError} from '../errors';
+export type LearningRun={cursor:number;recordings:Record<string,{key:string;duration:number}>;completedDay?:string};
+export type LearningProgress={version:string;companionId:string|null;active:string|null;runs:Record<string,LearningRun>;diamonds:number;xp:number;familiarity:number;affection:number;earned:string[];hints:string[];days:string[]};
+export const emptyLearning=():LearningProgress=>({version:COURSE_ID,companionId:null,active:null,runs:{},diamonds:0,xp:0,familiarity:0,affection:0,earned:[],hints:[],days:[]});
+export function findLesson(id:string){const lesson=lessons.find(l=>l.id===id);if(!lesson)throw new AppError(404,'没有找到这个旅程章节');return lesson;}
+export function requireUnlocked(p:LearningProgress,id:string){
+ const lesson=findLesson(id),index=lessons.indexOf(lesson);
+ if(p.companionId!==COMPANION.id)throw new AppError(403,'请先选择你的声音伙伴');
+ if(index>0&&!p.runs[lessons[index-1].id]?.completedDay)throw new AppError(403,'先完成前一章，再出发吧');
+ return lesson;
+}
+export function startLearning(p:LearningProgress,id:string){requireUnlocked(p,id);p.active=id;p.runs[id]??={cursor:0,recordings:{}};return p;}
+export function advanceLearning(p:LearningProgress,id:string,cursor:number,answer?:number,recording?:{key:string;duration:number},day=localDay('Asia/Shanghai')){
+ const lesson=requireUnlocked(p,id),run=p.runs[id];if(!run)throw new AppError(409,'请先进入这一章');
+ if(cursor<run.cursor)return {progress:p,correct:true,duplicate:true,gain:{diamonds:0,xp:0,familiarity:0,affection:0},completed:!!run.completedDay};
+ if(cursor!==run.cursor)throw new AppError(409,'进度已更新，请重新进入章节');
+ const step=lessonSteps(lesson)[cursor];if(!step)throw new AppError(409,'这一章已完成');
+ const scene=lesson.scenes[step.scene];
+ const q=step.kind==='quiz'?wordQuestion(scene,step.word):step.kind==='listen'?scene.listening:step.kind==='read'?scene.reading:null;
+ if(q&&answer!==q.answer)return {progress:p,correct:false,duplicate:false,gain:{diamonds:0,xp:0,familiarity:0,affection:0},completed:false};
+ if(step.kind==='speak'&&!recording)throw new AppError(400,'请录下你的回应，再继续');
+ const gain={diamonds:0,xp:0,familiarity:0,affection:0};
+ if(step.kind==='quiz'){
+  const key=id+':'+step.scene+':'+step.word;
+  if(!p.earned.includes(key)){p.earned.push(key);gain.diamonds=1;gain.xp=10;}
+ }
+ if(step.kind==='listen'||step.kind==='read')gain.xp=5;
+ if(step.kind==='speak'){run.recordings[String(cursor)]=recording!;gain.xp=15;gain.familiarity=3;gain.affection=1;}
+ run.cursor++;
+ if(run.cursor===lessonSteps(lesson).length&&!run.completedDay){run.completedDay=day;if(!p.days.includes(day))p.days.push(day);gain.familiarity+=4;gain.affection+=3;}
+ p.diamonds+=gain.diamonds;p.xp+=gain.xp;p.familiarity+=gain.familiarity;p.affection+=gain.affection;
+ return {progress:p,correct:true,duplicate:false,gain,completed:!!run.completedDay};
+}
+export function unlockHint(p:LearningProgress,id:string,cursor:number){
+ const lesson=requireUnlocked(p,id),run=p.runs[id];
+ if(!run||run.cursor!==cursor||lessonSteps(lesson)[cursor]?.kind!=='listen')throw new AppError(409,'现在不在这一段听力中');
+ const key=id+':'+cursor;
+ if(p.hints.includes(key))return p;
+ if(p.diamonds<2)throw new AppError(400,'需要 2 颗钻石，先完成单词挑战吧');
+ p.diamonds-=2;p.hints.push(key);return p;
+}
+export function learningSummary(p:LearningProgress,now=new Date()){
+ const today=localDay('Asia/Shanghai',now),days=new Set(p.days);let day=today,streak=0;
+ const previous=(d:string)=>{const date=new Date(d+'T12:00:00Z');date.setUTCDate(date.getUTCDate()-1);return date.toISOString().slice(0,10);};
+ if(!days.has(day))day=previous(day);
+ while(days.has(day)){streak++;day=previous(day);}
+ return {todayComplete:days.has(today),streak,completed:lessons.filter(l=>p.runs[l.id]?.completedDay).length,words:p.earned.length};
+}

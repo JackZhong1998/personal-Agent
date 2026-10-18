@@ -49,7 +49,7 @@ export async function speech(text:string, kind:'role'|'guide', owner?:string) {
     const bytes=new Uint8Array(await response.arrayBuffer());
     if(bytes.length<64 || bytes.length>8000000 || !(response.headers.get('content-type')||'').startsWith('audio/')) throw new AppError(502,'语音服务没有返回有效音频');
     await putAudio(key,bytes,'audio/mpeg');
-    await putRecord('speech-text/'+key,{text,kind,model:kind==='role'?model:'edge-tts',voice,generatedAt:new Date().toISOString()});
+    await putRecord('speech-text/'+key,{text,kind,model:kind==='role'?model:'edge-tts',voice:kind==='role'?voice:'en-US-AriaNeural',generatedAt:new Date().toISOString()});
     return {key,cached:false};
   });
 }

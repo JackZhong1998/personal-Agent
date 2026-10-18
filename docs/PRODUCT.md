@@ -1,3 +1,5 @@
+> 历史版本归档：此文件描述原先的角色对话故事。当前两页 Rosie 产品与美国旅行学习设计见 [ROSIE_PRODUCT.md](ROSIE_PRODUCT.md)。
+
 # Between · ROSÉ 平行心动
 
 ## 定位

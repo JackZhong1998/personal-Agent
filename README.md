@@ -1,8 +1,8 @@
-# Between · ROSÉ 平行心动
+# Between · Rosie，与你一起
 
-移动优先的 ROSÉ 非官方虚构同人语音故事。从初遇到相恋，使用合成配音，与本人及所属团队无关联。**预写剧本，录完即推进，不调用大语言模型。**
+以 Rosie 为中心的声音伙伴产品，当前只有两个页面：日常语音对话首页 `/`、美国旅行学习场景 `/travel`。非官方 AI 角色演绎，合成配音，与本人及所属团队无关联。
 
-已实现必填用户称呼、12 章各 20 轮的口语化剧情、沉浸式语音消息、点击查看中文翻译、场景图片与放大预览、逐次加分动效、回忆回放和关系旅程。产品方案与用户逐屏流程见 [docs/PRODUCT.md](docs/PRODUCT.md)。
+首页通过 OpenRouter 调用 DeepSeek；学习场景使用七天预写纽约旅程，含 140 个词与表达、旁白和角色台词、同稿听力与阅读、双语口语回应、每日打卡、钻石及成长反馈。产品结构与学习机制见 [docs/ROSIE_PRODUCT.md](docs/ROSIE_PRODUCT.md)。
 
 ## 本地运行
 
@@ -27,6 +27,8 @@ npm run edge-tts
 
 | 变量 | 用途 |
 | --- | --- |
+| `OPENROUTER_API_KEY` | 首页日常对话，仅服务端；学习材料不需要此服务 |
+| `OPENROUTER_MODEL` | 默认 `deepseek/deepseek-v4-flash`，需为账号实际可用的模型 ID |
 | `CARTESIA_API_KEY` | 角色语音，仅服务端 |
 | `CARTESIA_MODEL` | 默认 `sonic-3.6` |
 | `CARTESIA_VOICE_ID` | 默认用户指定 `afb402ce-7a39-49cf-acb5-3ff42e4e224f` |
@@ -63,7 +65,7 @@ npm run edge-tts
 
 英文推荐表达使用 [rany2/edge-tts](https://github.com/rany2/edge-tts)，固定 `en-US-AriaNeural`，不使用角色的克隆声音。Python 服务只响应显式的 `/speak`，启动与 `/health` 不合成音频。**当前没有调用真实语音服务作预生成。**
 
-不需要 `OPENROUTER_API_KEY` 或 DeepSeek：根据最终确认，主流程没有 LLM 请求，也不做语音转文字。若将来需要内容分支，优先增加预写分支及选择条件，另行确认是否需要识别。
+首页需要 `OPENROUTER_API_KEY`，口语经浏览器 Speech Recognition 转成文本后交给 LLM，生成中英双语回应。学习场景不调用 LLM 或语音识别：材料和答案预写，录音保存后推进。只有用户实际点击或发送当前互动时才请求声音，不预生成整套素材。
 
 ## Supabase
 
@@ -72,7 +74,7 @@ npm run edge-tts
 3. 表 `between_records` 保存进度、会话、剧本文本和音频元信息；私有 bucket `between-audio` 保存素材和录音。`between_leases` 处理跨实例并发。
 4. 浏览器不持有 Supabase 服务密钥；录音通过 Next API 按签名 Cookie 所属用户授权。其他用户的录音不能跨会话访问。
 
-真实 Supabase 项目尚未提供，SQL 与 REST 集成需在你的项目上完成首次验证。浏览器偏好保存在 localStorage，实际积分与录音路径由服务端维护；本地浏览器不能直接提交积分。
+继续使用已配置的 Supabase，无需为新学习场景新增 SQL。浏览器偏好保存在 localStorage，实际积分与录音路径由服务端维护；本地浏览器不能直接提交积分。
 
 ## 可以部署到 Vercel 吗？
 
@@ -86,7 +88,7 @@ npm run edge-tts
 
 API 最长执行时间设置 120 秒，请确认所选 Vercel 计划与运行模式支持。每段录音限制 45 秒、3.5MB，低于常见的 4.5MB 函数请求限制。Chrome/Android 优先 WebM Opus，Safari 使用 MP4；自动播放失败时提供显式播放按钮。真实 iOS Safari 仍需设备验收。
 
-需要网络访问 `api.cartesia.ai`、Supabase 项目域名、Python 服务域名；Python `edge-tts` 需访问 `speech.platform.bing.com`（HTTPS/WebSocket）。云环境的域名配置草稿与真实运行环境分开，保存草稿不表示运行网络限制已经改变。
+需要网络访问 `openrouter.ai`、`api.cartesia.ai`、Supabase 项目域名、Python 服务域名；浏览器照片需要 `commons.wikimedia.org`、`upload.wikimedia.org`；Python `edge-tts` 需访问 `speech.platform.bing.com`（HTTPS/WebSocket）。云环境的域名配置草稿与真实运行环境分开，保存草稿不表示运行网络限制已经改变。
 
 ## 验证
 
@@ -99,8 +101,8 @@ npm run build
 .venv/bin/python -m unittest discover -s services -p 'test_*.py' -v
 ```
 
-单元测试检查 240 轮内容与中文、姓名代入、私有语音缓存、逐轮奖励和结算修复、时区、并发锁、持久化与同源限制；浏览器/API 测试在桌面和手机尺寸检查必填称呼、20 轮录音、翻译、图片预览、即时奖励、完整结算和用户隔离。**自动化用模拟提供商与测试音频，不调用付费 TTS，不代表外部服务账号、声音权限或 Supabase 已验证。**
+单元测试覆盖七天材料、四阶段顺序、答错与重复提交、钻石消耗、每日结算、LLM 双语输出合同、缓存和原有数据兼容。桌面与手机浏览器/API 测试完成整个 47 步章节、两次录音、同稿音频复用、首页语音对话请求、私有内容隔离与照片署名。**测试使用模拟 LLM、TTS 与照片，不调用付费服务，不代表外部提供商或照片上游连通性已验证。**
 
 Playwright 默认使用本机 `/usr/bin/chromium`；其他机器可设置 `CHROMIUM_PATH` 为 Chrome/Chromium 路径。Linux CI 安装 Chromium 后运行，或修改 Playwright 配置使用下载的浏览器。
 
-角色故事、语音中文、图片与名字模板见 `lib/rose-content.ts`、`lib/scripts.ts`；当前剧情为创作，不代表真实私聊、经历或艺人原声。新故事使用独立进度命名空间，旧录音保留在后台，既有数据库无需重建。线上仍需完成真实服务连通性与手机音频验收。无登录的公开站点仍需按规模增加反滥用、防机器人、录音删除/保留政策；当前服务端每天限制每个匿名会话 240 次生成/上传操作，浏览器基本音量检测不能证明真人或语音正确性。
+新课程在 `lib/learning/content.ts`，结算在 `lib/learning/progress.ts`。学习数据使用独立键空间 `us-with-rosie-v1`，旧版故事和音频保留。无登录记录依赖当前浏览器 Cookie，实际 iOS Safari 的语音识别、麦克风权限和音频播放仍需设备验证。
