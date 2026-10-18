@@ -1,0 +1,20 @@
+BLACKPINK public-event photographs for static character previews
+
+jennie.jpg — 170517 Jennie Kim Blackpink 02.jpg
+Author: D4cgrapher
+License: CC BY-SA 4.0 — https://creativecommons.org/licenses/by-sa/4.0
+Source: https://commons.wikimedia.org/wiki/File:170517_Jennie_Kim_Blackpink_02.jpg
+
+jisoo.png — Jisoo of Blackpink at a Dior event, April 18, 2025 (5).png
+Author: K-POPIT 케이팝잇
+License: CC BY 3.0 — https://creativecommons.org/licenses/by/3.0
+Source: https://commons.wikimedia.org/wiki/File:Jisoo_of_Blackpink_at_a_Dior_event,_April_18,_2025_(5).png
+
+lisa.png — Blackpink Lisa at Bvulgari Avrora Awards 2022.png
+Author: E|ㅂ|텐 (TV10)
+License: CC BY 3.0 — https://creativecommons.org/licenses/by/3.0
+Source: https://commons.wikimedia.org/wiki/File:Blackpink_Lisa_at_Bvulgari_Avrora_Awards_2022.png
+
+Original files are unmodified. CSS crops for avatar/card display.
+These images do not imply participation or endorsement.
+Full original URLs are recorded in sources.json.
