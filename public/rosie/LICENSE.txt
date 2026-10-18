@@ -48,3 +48,9 @@ They are AI-generated illustrations, not photographs of real events.
 The original reference is credited above; the generated images are not
 presented as Commons photographs or as carrying a Commons license.
 Scene inventory: scenes.json.
+
+Character showcase illustrations:
+showcase-front.png, showcase-left.png and showcase-right.png are AI-generated
+fictional full-body character renders created with image_gen using the
+credited rosie-portrait.jpg as a visual reference. They are not photographs
+or a real 3D scan. Image viewpoints and interaction details: showcase.json.

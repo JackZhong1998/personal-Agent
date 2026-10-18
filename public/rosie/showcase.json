@@ -1,0 +1,19 @@
+{
+  "kind": "AI-generated fictional character illustrations",
+  "reference": "/rosie/rosie-portrait.jpg",
+  "interaction": "Three discrete image viewpoints with local zoom, pan and subtle perspective; no 3D mesh or full 360-degree reconstruction.",
+  "views": [
+    {
+      "id": "left",
+      "url": "/rosie/showcase-left.png"
+    },
+    {
+      "id": "front",
+      "url": "/rosie/showcase-front.png"
+    },
+    {
+      "id": "right",
+      "url": "/rosie/showcase-right.png"
+    }
+  ]
+}
