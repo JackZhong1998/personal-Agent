@@ -7,7 +7,8 @@
     "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
     "title": "Blackpink Rosé Rimowa 1.jpg",
     "original": "https://upload.wikimedia.org/wikipedia/commons/b/b3/Blackpink_Ros%C3%A9_Rimowa_1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-    "retrievedAt": "2026-10-18T09:03:30.826665+00:00"
+    "retrievedAt": "2026-10-18T09:03:30.826665+00:00",
+    "date": "2024-04-15"
   },
   {
     "url": "/rosie/rosie-detail.jpg",
@@ -17,7 +18,8 @@
     "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
     "title": "Blackpink Rosé Rimowa 2.jpg",
     "original": "https://upload.wikimedia.org/wikipedia/commons/a/a2/Blackpink_Ros%C3%A9_Rimowa_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-    "retrievedAt": "2026-10-18T09:03:32.724174+00:00"
+    "retrievedAt": "2026-10-18T09:03:32.724174+00:00",
+    "date": "2024-04-15"
   },
   {
     "url": "/rosie/rosie-secondary.jpg",
@@ -27,6 +29,40 @@
     "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
     "title": "Blackpink Rosé Rimowa 4.jpg",
     "original": "https://upload.wikimedia.org/wikipedia/commons/a/a4/Blackpink_Ros%C3%A9_Rimowa_4.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-    "retrievedAt": "2026-10-18T09:03:33.580879+00:00"
+    "retrievedAt": "2026-10-18T09:03:33.580879+00:00",
+    "date": "2024-04-15"
+  },
+  {
+    "url": "/rosie/rosie-rimowa.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Blackpink_Ros%C3%A9_Rimowa_3.jpg",
+    "artist": "TV10",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+    "title": "Blackpink Rosé Rimowa 3.jpg",
+    "date": "2024-04-15",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/7/76/Blackpink_Ros%C3%A9_Rimowa_3.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "retrievedAt": "2026-10-18T09:58:08.826730+00:00"
+  },
+  {
+    "url": "/rosie/rosie-sofi-10.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Ros%C3%A9_performs_3am_at_SoFi_Stadium_10.png",
+    "artist": "theCwE",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+    "title": "Rosé performs 3am at SoFi Stadium 10.png",
+    "date": "2025-07-15",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/2/23/Ros%C3%A9_performs_3am_at_SoFi_Stadium_10.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "retrievedAt": "2026-10-18T09:58:08.828265+00:00"
+  },
+  {
+    "url": "/rosie/rosie-sofi-14.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Ros%C3%A9_performs_3am_at_SoFi_Stadium_14.png",
+    "artist": "theCwE",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+    "title": "Rosé performs 3am at SoFi Stadium 14.png",
+    "date": "2025-07-15",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/8/89/Ros%C3%A9_performs_3am_at_SoFi_Stadium_14.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "retrievedAt": "2026-10-18T09:58:08.829617+00:00"
   }
 ]

@@ -5,7 +5,7 @@ const wav=Buffer.alloc(44+3200);wav.write('RIFF');wav.writeUInt32LE(wav.length-8
 async function name(page:Page){await page.getByPlaceholder('你的名字或昵称').fill('Jamie');await page.getByRole('checkbox').check();await page.getByRole('button',{name:'就这样叫我',exact:true}).click();}
 test('two-page Rosie home and travel catalog load real-source photo metadata without generating speech or chat',async({page},info)=>{
  let generated=0;page.on('request',r=>{if(r.method()==='POST'&&/\/api\/(chat|learn\/audio)/.test(r.url()))generated++;});
- await page.goto('/');await expect(page.locator('.portrait-caption h1')).toContainText('Rosie');await expect(page.locator('.rosie-photo img')).toBeVisible();await expect.poll(()=>page.locator('.rosie-photo img').evaluate((img:HTMLImageElement)=>img.complete&&img.naturalWidth>0)).toBe(true);await page.getByRole('button',{name:'切换 Rosie 照片 2'}).click();await expect(page.locator('.rosie-photo img')).toHaveAttribute('src','/rosie/rosie-detail.jpg');await name(page);
+ await page.goto('/');await expect(page.locator('.portrait-caption h1')).toContainText('Rosie');await expect(page.locator('.rosie-photo>img')).toBeVisible();await expect.poll(()=>page.locator('.rosie-photo>img').evaluate((img:HTMLImageElement)=>img.complete&&img.naturalWidth>0)).toBe(true);await page.getByRole('button',{name:'切换 Rosie 照片 2'}).click();await expect(page.locator('.rosie-photo>img')).toHaveAttribute('src',/rosie-detail/);await name(page);
  await expect(page.getByRole('button',{name:'按一下，聊一会儿'})).toBeVisible();await page.locator('.home-travel-entry').click();await expect(page).toHaveURL(/\/travel$/);await expect(page.getByRole('heading',{name:/和 Rosie，\s*一起去美国/ })).toBeVisible();await expect(page.locator('.course-day')).toHaveCount(7);await expect(page.locator('.course-day').nth(1)).toBeDisabled();expect(generated).toBe(0);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:`test-results/travel-${info.project.name}.png`,fullPage:true});
 });
@@ -43,6 +43,8 @@ test('a complete travel chapter cycles through twenty words, the same listening 
  await expect(page.getByRole('heading',{name:'今天的旅程，完成了。'})).toBeVisible();await page.getByRole('button',{name:'回到旅程地图',exact:true}).click();await expect(page.getByText('今日任务已完成',{exact:true})).toBeVisible();await expect(page.locator('.course-day').nth(1)).toBeEnabled();
  const saved=await(await page.request.get('/api/learn')).json();expect(saved.progress.earned).toHaveLength(20);expect(saved.progress.diamonds).toBe(16);expect(saved.progress.xp).toBe(250);expect(saved.progress.affection).toBe(5);expect(Object.keys(saved.progress.runs.arrival.recordings)).toHaveLength(2);expect(played).toHaveLength(4);
  await page.reload();await expect(page.getByText('今日任务已完成',{exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.locator('.course-day').first().click();await expect(page.locator('.frame-step small')).toHaveText(`1 / ${steps.length}`);await page.getByRole('button',{name:'一起出发',exact:true}).click();await expect(page.locator('.word-meaning')).toHaveText(first.scenes[0].words[0].zh);
+ const reviewed=await(await page.request.get('/api/learn')).json();expect(reviewed.progress.diamonds).toBe(saved.progress.diamonds);expect(reviewed.progress.xp).toBe(saved.progress.xp);
 });
 test('home voice input sends a real chat request contract and displays bilingual reply before requesting saved speech',async({page},info)=>{
  let chats=0,audios=0;

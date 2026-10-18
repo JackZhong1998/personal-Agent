@@ -1,15 +1,42 @@
-Rosé public-event photographs
-Author: TV10
-License: Creative Commons Attribution 3.0 Unported (CC BY 3.0)
-License terms: https://creativecommons.org/licenses/by/3.0/
+Rosé public-event photographs (2024–2025, blonde hair)
 
-Files:
 rosie-portrait.jpg — Blackpink Rosé Rimowa 1.jpg
-rosie-detail.jpg — Blackpink Rosé Rimowa 2.jpg
-rosie-secondary.jpg — Blackpink Rosé Rimowa 4.jpg
+Date: 2024-04-15
+Author: TV10
+License: CC BY 3.0 — https://creativecommons.org/licenses/by/3.0
+Source: https://commons.wikimedia.org/wiki/File%3ABlackpink%20Ros%C3%A9%20Rimowa%201.jpg
 
-Full Wikimedia Commons source pages, original asset URLs, author and license
-metadata are recorded in sources.json alongside these images.
-The original image bytes are retained. The interface crops for layout and applies
-reduced saturation through CSS; no generated likeness is substituted.
+rosie-detail.jpg — Blackpink Rosé Rimowa 2.jpg
+Date: 2024-04-15
+Author: TV10
+License: CC BY 3.0 — https://creativecommons.org/licenses/by/3.0
+Source: https://commons.wikimedia.org/wiki/File%3ABlackpink%20Ros%C3%A9%20Rimowa%202.jpg
+
+rosie-secondary.jpg — Blackpink Rosé Rimowa 4.jpg
+Date: 2024-04-15
+Author: TV10
+License: CC BY 3.0 — https://creativecommons.org/licenses/by/3.0
+Source: https://commons.wikimedia.org/wiki/File%3ABlackpink%20Ros%C3%A9%20Rimowa%204.jpg
+
+rosie-rimowa.jpg — Blackpink Rosé Rimowa 3.jpg
+Date: 2024-04-15
+Author: TV10
+License: CC BY 3.0 — https://creativecommons.org/licenses/by/3.0
+Source: https://commons.wikimedia.org/wiki/File:Blackpink_Ros%C3%A9_Rimowa_3.jpg
+
+rosie-sofi-10.png — Rosé performs 3am at SoFi Stadium 10.png
+Date: 2025-07-15
+Author: theCwE
+License: CC BY 3.0 — https://creativecommons.org/licenses/by/3.0
+Source: https://commons.wikimedia.org/wiki/File:Ros%C3%A9_performs_3am_at_SoFi_Stadium_10.png
+
+rosie-sofi-14.png — Rosé performs 3am at SoFi Stadium 14.png
+Date: 2025-07-15
+Author: theCwE
+License: CC BY 3.0 — https://creativecommons.org/licenses/by/3.0
+Source: https://commons.wikimedia.org/wiki/File:Ros%C3%A9_performs_3am_at_SoFi_Stadium_14.png
+
+Original bytes retained. The interface crops and reduces saturation through CSS,
+and serves resized images through Next.js image optimization.
 The photographs do not imply participation or endorsement by the artist.
+Full original URLs and retrieval metadata: sources.json.
