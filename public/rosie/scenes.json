@@ -1,0 +1,89 @@
+{
+  "description": "AI-generated fictional travel backgrounds inspired by the licensed 2024 blonde Rosé reference. These do not depict real events or endorsement.",
+  "images": [
+    {
+      "id": "airport",
+      "url": "/rosie/journey-airport.png",
+      "kind": "ai-generated-fictional-scene",
+      "reference": "/rosie/rosie-portrait.jpg"
+    },
+    {
+      "id": "bridge",
+      "url": "/rosie/journey-bridge.png",
+      "kind": "ai-generated-fictional-scene",
+      "reference": "/rosie/rosie-portrait.jpg"
+    },
+    {
+      "id": "cafe",
+      "url": "/rosie/journey-cafe.png",
+      "kind": "ai-generated-fictional-scene",
+      "reference": "/rosie/rosie-portrait.jpg"
+    },
+    {
+      "id": "departure",
+      "url": "/rosie/journey-departure.png",
+      "kind": "ai-generated-fictional-scene",
+      "reference": "/rosie/rosie-portrait.jpg"
+    },
+    {
+      "id": "dinner",
+      "url": "/rosie/journey-dinner.png",
+      "kind": "ai-generated-fictional-scene",
+      "reference": "/rosie/rosie-portrait.jpg"
+    },
+    {
+      "id": "hotel",
+      "url": "/rosie/journey-hotel.png",
+      "kind": "ai-generated-fictional-scene",
+      "reference": "/rosie/rosie-portrait.jpg"
+    },
+    {
+      "id": "market",
+      "url": "/rosie/journey-market.png",
+      "kind": "ai-generated-fictional-scene",
+      "reference": "/rosie/rosie-portrait.jpg"
+    },
+    {
+      "id": "museum",
+      "url": "/rosie/journey-museum.png",
+      "kind": "ai-generated-fictional-scene",
+      "reference": "/rosie/rosie-portrait.jpg"
+    },
+    {
+      "id": "park",
+      "url": "/rosie/journey-park.png",
+      "kind": "ai-generated-fictional-scene",
+      "reference": "/rosie/rosie-portrait.jpg"
+    },
+    {
+      "id": "postcard",
+      "url": "/rosie/journey-postcard.png",
+      "kind": "ai-generated-fictional-scene",
+      "reference": "/rosie/rosie-portrait.jpg"
+    },
+    {
+      "id": "rain",
+      "url": "/rosie/journey-rain.png",
+      "kind": "ai-generated-fictional-scene",
+      "reference": "/rosie/rosie-portrait.jpg"
+    },
+    {
+      "id": "rest",
+      "url": "/rosie/journey-rest.png",
+      "kind": "ai-generated-fictional-scene",
+      "reference": "/rosie/rosie-portrait.jpg"
+    },
+    {
+      "id": "subway",
+      "url": "/rosie/journey-subway.png",
+      "kind": "ai-generated-fictional-scene",
+      "reference": "/rosie/rosie-portrait.jpg"
+    },
+    {
+      "id": "theater",
+      "url": "/rosie/journey-theater.png",
+      "kind": "ai-generated-fictional-scene",
+      "reference": "/rosie/rosie-portrait.jpg"
+    }
+  ]
+}

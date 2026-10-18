@@ -176,3 +176,23 @@ for(const lesson of lessons)lesson.scenes.forEach((scene,index)=>{
 });
 export function materialBlocks(scene:Scene){return [{kind:'narration',en:scene.passage,zh:scene.translation},...(scene.dialogue||[]).map(line=>({kind:'rosie',...line}))];}
 export function materialText(scene:Scene){return materialBlocks(scene).map(b=>b.en).join('\n\n');}
+
+// Extra questions refer only to details present in the shared, prewritten audio.
+const listeningDetails:Record<string,[string,string,string[],string][]>={
+ airport:[['你们接下来要取什么？','行李',['咖啡','演出票'],'交谈后，你们跟随标志去取行李。'],['Rosie会在哪里？','在你身边',['在酒店等你','先坐飞机离开'],'她说 I’ll stay right beside you。']],
+ hotel:[['谁打开了手机上的预订？','Rosie',['前台工作人员','出租车司机'],'旁白中的 I 指 Rosie。'],['Rosie把什么留给了你？','舒服的椅子',['最后一张机票','博物馆门票'],'她说 save you the comfortable chair。']],
+ cafe:[['Rosie的咖啡里加了什么？','燕麦奶',['橙汁','冰淇淋'],'她点了 a small coffee with oat milk。'],['你把小票放在哪里？','口袋里',['柜台上','行李箱里'],'旁白说 keep the receipt in your pocket。']],
+ park:[['谁提出帮你们拍照？','路过的游客',['酒店前台','咖啡店员'],'A passing visitor offers to take a photo。'],['小路把你们带到了哪里？','一片小湖旁',['地铁站','机场入口'],'小路 leads us toward a small lake。']],
+ subway:[['你们要坐哪个方向的列车？','往城区北部',['去机场','往城区南部'],'你们寻找 an uptown train。'],['谁一度把地图拿反了？','Rosie',['热心乘客','司机'],'旁白说 I hold the map the wrong way around。']],
+ museum:[['你们拿了什么来帮助参观？','语音导览',['酒店房卡','地铁线路图'],'An audio guide is available。'],['画里描绘的是什么？','安静的房间',['热闹的机场','日落时的大桥'],'她停在 a painting of a quiet room 前。']],
+ market:[['你们询问了什么支付方式？','现金',['分期付款','旅行支票'],'你们确认是否 can pay in cash。'],['最后在哪里分享水果？','阳光下的街角',['酒店前台','飞机上'],'你们在 a sunny street corner 分享水果。']],
+ bridge:[['你们什么时候到桥边？','日落前',['清晨天亮前','午夜之后'],'We reach the bridge just before sunset。'],['Rosie为什么收起地图？','这一段不需要地图',['地图丢了','马上要去机场'],'她说 We don’t need it for this part。']],
+ rain:[['雨点落在什么上面？','雨伞',['登机牌','博物馆门票'],'开头描写雨点敲打雨伞。'],['咖啡馆在什么对面？','银行',['机场','药房'],'指路的人说 the café is across from a bank。']],
+ rest:[['你有什么不舒服？','轻微头痛',['扭伤了脚','严重牙痛'],'角色建议你把 mild headache 告诉药师。'],['Rosie更想做什么？','陪你坐着休息',['继续赶景点','马上去买纪念品'],'她说更愿意在你身边坐一会儿。']],
+ dinner:[['你们想坐在哪里？','靠窗的双人桌',['吧台旁的单人位','餐厅门外'],'你们要 a table for two near the window。'],['服务员先问了什么？','是否有过敏',['航班几点起飞','住在哪个酒店'],'The server asks about any allergy。']],
+ theater:[['谁帮你们找座位？','引座员',['机场工作人员','药师'],'你们 ask an usher to help us find our seat。'],['你们什么时候交流喜欢的片段？','中场休息时',['登机时','早餐时'],'During intermission, we compare our favorite moments。']],
+ postcard:[['明信片上画着什么？','那座桥',['飞机','一杯咖啡'],'她选择 a postcard with a picture of the bridge。'],['你们问哪里可以买什么？','邮票',['地铁卡','早餐券'],'你们 ask where to buy a stamp。']],
+ departure:[['你们拿出了什么？','各自的登机牌',['酒店房卡','演出票'],'你们 take out each boarding pass。'],['等候时Rosie问了什么？','最想留下哪个瞬间',['早餐几点开始','博物馆在哪里'],'她问 which moment you would keep。']]
+};
+export function sceneKey(scene:Scene){const index=lessons.flatMap(l=>l.scenes).indexOf(scene);return ['airport','hotel','cafe','park','subway','museum','market','bridge','rain','rest','dinner','theater','postcard','departure'][index]||scene.image;}
+export function listeningQuestions(scene:Scene):Question[]{return [scene.listening,...(listeningDetails[sceneKey(scene)]||[]).map(([prompt,correct,wrong,explanation],i)=>question(prompt,correct,wrong,explanation,(i+1)%3))];}

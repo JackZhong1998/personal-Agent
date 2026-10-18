@@ -2,7 +2,7 @@ import {test,expect} from '@playwright/test';
 import {createHash,createHmac,randomUUID} from 'node:crypto';
 import {mkdir,writeFile,rm} from 'node:fs/promises';
 import path from 'node:path';
-import {lessons,lessonSteps,wordQuestion,materialText,COURSE_ID,COMPANION} from '../../lib/learning/content';
+import {lessons,lessonSteps,wordQuestion,listeningQuestions,materialText,COURSE_ID,COMPANION} from '../../lib/learning/content';
 import {emptyLearning,startLearning,advanceLearning} from '../../lib/learning/progress';
 
 test('learning audio enforces reached steps and reuses exactly the same saved material for listening and reading',async({request,baseURL})=>{
@@ -15,7 +15,7 @@ test('learning audio enforces reached steps and reuses exactly the same saved ma
   await record(owner+'/learning/'+COURSE_ID,p);await record('audio-meta/'+key,{mime:'audio/mpeg',size:100});const target=path.join(root,'audio',key);await mkdir(path.dirname(target),{recursive:true});await writeFile(target,Buffer.alloc(100));
   expect((await request.post('/api/learn/audio',{headers,data:{chapterId:lesson.id,cursor:22,target:'material'}})).status()).toBe(403);
   const listening=await request.post('/api/learn/audio',{headers,data:{chapterId:lesson.id,cursor:21,target:'material'}});expect(listening.status()).toBe(200);const first=await listening.json();expect(first.cached).toBe(true);expect(first.saved).toBe(true);
-  const advance=await request.post('/api/learn',{headers,data:{action:'advance',chapterId:lesson.id,cursor:21,answer:lesson.scenes[0].listening.answer}});expect(advance.status()).toBe(200);
+  for(const [question,q] of listeningQuestions(lesson.scenes[0]).entries()){const advance=await request.post('/api/learn',{headers,data:{action:'advance',chapterId:lesson.id,cursor:21,question,answer:q.answer}});expect(advance.status()).toBe(200);if(question<2)expect((await request.post('/api/learn/audio',{headers,data:{chapterId:lesson.id,cursor:22,target:'material'}})).status()).toBe(403);}
   const reading=await request.post('/api/learn/audio',{headers,data:{chapterId:lesson.id,cursor:22,target:'material'}});expect(reading.status()).toBe(200);expect((await reading.json()).audioUrl).toBe(first.audioUrl);
   expect((await request.post('/api/learn/audio',{headers,data:{chapterId:lessons[1].id,cursor:0,target:'material'}})).status()).toBe(403);
  }finally{await rm(path.join(root,'records',owner),{recursive:true,force:true});await rm(path.join(root,'records','audio-meta',key+'.json'),{force:true});await rm(path.join(root,'audio',key),{force:true});}

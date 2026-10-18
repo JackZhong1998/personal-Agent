@@ -1,14 +1,14 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import {useEffect,useRef,useState} from 'react';
 import {ArrowRight,Mic,Pause,Plane,PencilLine,Square,Volume2} from 'lucide-react';
 import {useLearningState} from './useLearningState';
 import {useJourneyAudio} from './useJourneyAudio';
 import {NameSetup} from './NameSetup';
-import {RosiePhoto} from './RosiePhoto';
 import {RosieCredits} from './RosieCredits';
 import {learningSummary} from '@/lib/learning/progress';
-import {COMPANION,lessons} from '@/lib/learning/content';
+import {COMPANION} from '@/lib/learning/content';
 import type {HomeMessage} from '@/lib/home-chat';
 type Recognizer={lang:string;interimResults:boolean;continuous:boolean;onresult:((e:{resultIndex:number;results:ArrayLike<{0:{transcript:string};isFinal:boolean}>})=>void)|null;onend:(()=>void)|null;onerror:((e:{error:string})=>void)|null;start:()=>void;stop:()=>void;abort:()=>void};
 export function RosieHome(){
@@ -32,21 +32,23 @@ export function RosieHome(){
   try{const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:requestId.current,message:draft.trim()})});const d=await r.json();if(!r.ok)throw new Error(d.error||'暂时未收到回应');if(alive.current){setMessages(a=>a.some(m=>m.id===d.message.id)?a:[...a,d.message]);setDraft('');requestId.current='';void audio.play({target:'chat',messageId:d.message.id});}}
   catch(e){if(alive.current)setError((e as Error).message);}finally{if(alive.current)setBusy(false);}
  }
- const summary=learningSummary(learning.progress),next=lessons.find(l=>!learning.progress.runs[l.id]?.completedDay)||lessons[0];
- return <div className="rosie-home"><header className="rosie-nav"><Link href="/" className="rosie-wordmark">between<span> / rosie</span></Link><div><button className="icon-button" aria-label="修改称呼" onClick={()=>setSettings(!settings)}><PencilLine size={18}/></button></div></header>
- <main className="rosie-home-main"><section className="rosie-introduction"><div className="rosie-portrait-wrap"><RosiePhoto/><div className="portrait-caption"><h1>Rosie.</h1></div><span className="portrait-footnote">非官方 AI 角色演绎 · 合成配音</span></div></section>
- <section className="rosie-home-space"><div className="home-conversation-heading"><span>对话</span><span>{learning.name}</span></div>
+ const summary=learningSummary(learning.progress);
+ return <div className="rosie-home chat-home">
+ <div className="chat-backdrop" aria-hidden="true"><Image src="/rosie/rosie-portrait.jpg" alt="" fill sizes="100vw" priority/><div/></div>
+ <header className="chat-header"><div className="chat-identity"><Image src="/rosie/rosie-rimowa.jpg" alt="Rosie 头像" width={44} height={44}/><div><h1>Rosie</h1><small>AI 角色 · 合成配音</small></div></div><button className="text-button" aria-label="修改称呼" onClick={()=>setSettings(!settings)}>{learning.name||'你的称呼'}<PencilLine size={14}/></button></header>
+ <main className="chat-main"><div className="home-chat-feed" ref={feed} aria-label="与 Rosie 的日常对话">
+ <div className="scene-cards"><Link className="home-travel-entry" href="/travel"><span className="travel-entry-icon"><Plane size={21}/></span><span><h2>一起去美国</h2><p>英语旅行 · {summary.completed}/7 章</p></span><ArrowRight size={18}/></Link></div>
  {(!learning.progress.companionId||settings)&&learning.loaded?<div className="home-welcome"><NameSetup initial={learning.name} onSave={async name=>{await learning.choose(name);setSettings(false);}}/>{settings&&<button className="text-button" onClick={()=>setSettings(false)}>取消</button>}</div>:<>
- <div className="home-chat-feed" ref={feed} aria-label="与 Rosie 的日常对话"><article className="home-rosie-line"><span>ROSIE</span><p lang="en">{COMPANION.intro}</p><small lang="zh-CN">嗨，我是 Rosie。我们可以一起慢慢经历每一段小冒险。准备好看看今天会带来什么了吗？</small><button className="chat-audio-button" disabled={audio.busy} onClick={()=>void audio.play({target:'preview'})} aria-label="听 Rosie 打招呼"><Volume2 size={16}/></button></article>
+ <article className="home-rosie-line"><span>ROSIE</span><p lang="en">{COMPANION.intro}</p><small lang="zh-CN">嗨，我是 Rosie。我们可以一起慢慢经历每一段小冒险。准备好看看今天会带来什么了吗？</small><button className="chat-audio-button" disabled={audio.busy} onClick={()=>void audio.play({target:'preview'})} aria-label="听 Rosie 打招呼"><Volume2 size={16}/></button></article>
  {messages.map(m=><div className="home-exchange" key={m.id}><article className="home-user-line"><span>{learning.name||'YOU'}</span><p>{m.user}</p></article><article className="home-rosie-line"><span>ROSIE</span><p lang="en">{m.english}</p><small lang="zh-CN">{m.chinese}</small><button className="chat-audio-button" disabled={audio.busy} onClick={()=>void audio.play({target:'chat',messageId:m.id})} aria-label="重听 Rosie 的回应"><Volume2 size={16}/></button></article></div>)}
  {busy&&<p className="home-thinking" role="status"><span className="spinner"/>正在回复…</p>}
- {draft&&<div className="voice-draft"><span>你刚刚说</span><p>{draft}</p>{!listening&&<div><button className="text-button" onClick={listen} disabled={busy}>重新说</button><button className="primary-button" onClick={()=>void send()} disabled={busy}>{busy?'发送中…':'发送'}<ArrowRight size={15}/></button></div>}</div>}
- </div>
- <div className="home-voice-controls"><button className={'home-mic '+(listening?'listening':'')} disabled={busy||!learning.loaded} onClick={()=>listening?recognition.current?.stop():listen()}>{listening?<Square size={18}/>:<Mic size={21}/>}<span>{listening?'说完了，点这里':'按一下，聊一会儿'}</span></button><select aria-label="口语识别语言" value={language} onChange={e=>setLanguage(e.target.value)} disabled={listening||busy}><option value="en-US">EN</option><option value="zh-CN">中文</option></select>{audio.playing&&<button className="icon-button" onClick={audio.stop} aria-label="暂停 Rosie 的语音"><Pause size={18}/></button>}</div>
  </>}
+ </div></main>
+ <div className="chat-bottom"><div className="chat-composer-inner">
+ {draft&&<div className="voice-draft"><p>{draft}</p>{!listening&&<div><button className="text-button" onClick={listen} disabled={busy}>重新说</button><button className="primary-button" onClick={()=>void send()} disabled={busy}>{busy?'发送中…':'发送'}<ArrowRight size={15}/></button></div>}</div>}
  {(error||learning.error||audio.error)&&<p className="error-message" role="alert">{error||learning.error||audio.error}{learning.error&&<button onClick={()=>void learning.load()}>重新同步</button>}</p>}
- {audio.note&&<p className="audio-save-note">{audio.note}</p>}
  {ready===false&&learning.progress.companionId&&<p className="home-service-note">对话服务未连接</p>}
- <Link className="home-travel-entry" href="/travel"><span className="travel-entry-icon"><Plane size={22}/></span><span><h2>和 Rosie 去美国</h2><p>{summary.completed}/7 章 · {next.title}</p></span><ArrowRight size={23}/></Link>
- </section></main><footer className="rosie-footer"><span>非官方 AI 演绎 · 与 ROSÉ 本人及团队无关联</span><RosieCredits/></footer></div>;
+ {learning.progress.companionId&&!settings&&<div className="home-voice-controls"><button className={'home-mic '+(listening?'listening':'')} disabled={busy||!learning.loaded} onClick={()=>listening?recognition.current?.stop():listen()}>{listening?<Square size={18}/>:<Mic size={21}/>}<span>{listening?'结束录音':'点击说话'}</span></button><select aria-label="口语识别语言" value={language} onChange={e=>setLanguage(e.target.value)} disabled={listening||busy}><option value="en-US">EN</option><option value="zh-CN">中文</option></select>{audio.playing&&<button className="icon-button" onClick={audio.stop} aria-label="暂停 Rosie 的语音"><Pause size={18}/></button>}</div>}
+ <div className="chat-fine-print"><span>{audio.note||'非官方 AI 演绎 · 与 ROSÉ 本人及团队无关联'}</span><RosieCredits/></div>
+ </div></div></div>;
 }

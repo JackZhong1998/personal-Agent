@@ -40,3 +40,11 @@ Original bytes retained. The interface crops and reduces saturation through CSS,
 and serves resized images through Next.js image optimization.
 The photographs do not imply participation or endorsement by the artist.
 Full original URLs and retrieval metadata: sources.json.
+
+Fictional travel illustrations:
+journey-*.png (14 distinct scenes) were generated with image_gen for this
+fictional learning experience, using rosie-portrait.jpg as a visual reference.
+They are AI-generated illustrations, not photographs of real events.
+The original reference is credited above; the generated images are not
+presented as Commons photographs or as carrying a Commons license.
+Scene inventory: scenes.json.
