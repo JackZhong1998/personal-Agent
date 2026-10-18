@@ -2,19 +2,15 @@ import {test,expect,type Page} from '@playwright/test';
 import {lessons,lessonSteps,wordQuestion,materialBlocks} from '../../lib/learning/content';
 const first=lessons[0];
 const wav=Buffer.alloc(44+3200);wav.write('RIFF');wav.writeUInt32LE(wav.length-8,4);wav.write('WAVE',8);wav.write('fmt ',12);wav.writeUInt32LE(16,16);wav.writeUInt16LE(1,20);wav.writeUInt16LE(1,22);wav.writeUInt32LE(16000,24);wav.writeUInt32LE(32000,28);wav.writeUInt16LE(2,32);wav.writeUInt16LE(16,34);wav.write('data',36);wav.writeUInt32LE(3200,40);
-async function photos(page:Page){
- await page.route('https://commons.wikimedia.org/**',r=>r.fulfill({json:{query:{pages:{1:{title:'File:Rosé public event test fixture.jpg',imageinfo:[{url:'https://upload.wikimedia.org/test-portrait.svg',thumburl:'https://upload.wikimedia.org/test-portrait.svg',width:600,height:900,extmetadata:{Artist:{value:'Test photographer'},LicenseShortName:{value:'CC BY-SA 4.0'},LicenseUrl:{value:'https://creativecommons.org/licenses/by-sa/4.0/'}}}]}}}}}));
- await page.route('https://upload.wikimedia.org/**',r=>r.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900"><rect width="600" height="900" fill="#9ba88d"/><text x="90" y="400" fill="#d9e0cb" font-size="65">PHOTO TEST</text></svg>'}));
-}
 async function name(page:Page){await page.getByPlaceholder('你的名字或昵称').fill('Jamie');await page.getByRole('checkbox').check();await page.getByRole('button',{name:'就这样叫我',exact:true}).click();}
 test('two-page Rosie home and travel catalog load real-source photo metadata without generating speech or chat',async({page},info)=>{
- await photos(page);let generated=0;page.on('request',r=>{if(r.method()==='POST'&&/\/api\/(chat|learn\/audio)/.test(r.url()))generated++;});
- await page.goto('/');await expect(page.locator('.portrait-caption h1')).toContainText('Rosie');await expect(page.locator('.rosie-photo img')).toBeVisible();await name(page);
+ let generated=0;page.on('request',r=>{if(r.method()==='POST'&&/\/api\/(chat|learn\/audio)/.test(r.url()))generated++;});
+ await page.goto('/');await expect(page.locator('.portrait-caption h1')).toContainText('Rosie');await expect(page.locator('.rosie-photo img')).toBeVisible();await expect.poll(()=>page.locator('.rosie-photo img').evaluate((img:HTMLImageElement)=>img.complete&&img.naturalWidth>0)).toBe(true);await page.getByRole('button',{name:'切换 Rosie 照片 2'}).click();await expect(page.locator('.rosie-photo img')).toHaveAttribute('src','/rosie/rosie-detail.jpg');await name(page);
  await expect(page.getByRole('button',{name:'按一下，聊一会儿'})).toBeVisible();await page.locator('.home-travel-entry').click();await expect(page).toHaveURL(/\/travel$/);await expect(page.getByRole('heading',{name:/和 Rosie，\s*一起去美国/ })).toBeVisible();await expect(page.locator('.course-day')).toHaveCount(7);await expect(page.locator('.course-day').nth(1)).toBeDisabled();expect(generated).toBe(0);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:`test-results/travel-${info.project.name}.png`,fullPage:true});
 });
 test('a complete travel chapter cycles through twenty words, the same listening and reading story, and two saved spoken replies',async({page},info)=>{
- test.setTimeout(150000);await page.emulateMedia({reducedMotion:'reduce'});await photos(page);const played:{chapterId:string;cursor:number;target:string}[]=[];
+ test.setTimeout(150000);await page.emulateMedia({reducedMotion:'reduce'});const played:{chapterId:string;cursor:number;target:string}[]=[];
  await page.route('**/lesson-test.wav',r=>r.fulfill({contentType:'audio/wav',body:wav}));
  await page.route('**/api/learn/audio',r=>{played.push(r.request().postDataJSON());return r.fulfill({json:{audioUrl:'/lesson-test.wav',cached:played.length>1,saved:true}});});
  await page.goto('/travel');await name(page);await page.getByRole('button',{name:'开始今日章节',exact:true}).click();const room=page.getByRole('dialog',{name:'旅行章节：'+first.title});await expect(room).toBeVisible();let quizCount=0;
@@ -49,7 +45,7 @@ test('a complete travel chapter cycles through twenty words, the same listening 
  await page.reload();await expect(page.getByText('今日任务已完成',{exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
 test('home voice input sends a real chat request contract and displays bilingual reply before requesting saved speech',async({page},info)=>{
- await photos(page);let chats=0,audios=0;
+ let chats=0,audios=0;
  await page.addInitScript(()=>{class TestRecognition{lang='';continuous=false;interimResults=false;onresult:((e:unknown)=>void)|null=null;onend:(()=>void)|null=null;onerror=null;start(){setTimeout(()=>{this.onresult?.({resultIndex:0,results:[{0:{transcript:'I want to visit New York.'},isFinal:true}]});this.onend?.();},50);}stop(){this.onend?.();}abort(){}}Object.assign(window,{SpeechRecognition:TestRecognition});});
  await page.route('**/home-test.wav',r=>r.fulfill({contentType:'audio/wav',body:wav}));
  await page.route('**/api/chat',r=>{if(r.request().method()==='GET')return r.fulfill({json:{messages:[],ready:true}});chats++;const b=r.request().postDataJSON();expect(b.message).toBe('I want to visit New York.');return r.fulfill({json:{message:{id:b.id,user:b.message,english:"Then let's start with one little adventure. What would you like to see first?",chinese:'那我们就从一段小冒险开始。你最想先去哪里？',createdAt:new Date().toISOString()}}});});

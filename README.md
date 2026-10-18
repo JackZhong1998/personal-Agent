@@ -88,7 +88,7 @@ npm run edge-tts
 
 API 最长执行时间设置 120 秒，请确认所选 Vercel 计划与运行模式支持。每段录音限制 45 秒、3.5MB，低于常见的 4.5MB 函数请求限制。Chrome/Android 优先 WebM Opus，Safari 使用 MP4；自动播放失败时提供显式播放按钮。真实 iOS Safari 仍需设备验收。
 
-需要网络访问 `openrouter.ai`、`api.cartesia.ai`、Supabase 项目域名、Python 服务域名；浏览器照片需要 `commons.wikimedia.org`、`upload.wikimedia.org`；Python `edge-tts` 需访问 `speech.platform.bing.com`（HTTPS/WebSocket）。云环境的域名配置草稿与真实运行环境分开，保存草稿不表示运行网络限制已经改变。
+需要网络访问 `openrouter.ai`、`api.cartesia.ai`、Supabase 项目域名、Python 服务域名；照片已经本地部署，原图核验与更新时才需要 `commons.wikimedia.org`、`upload.wikimedia.org`；Python `edge-tts` 需访问 `speech.platform.bing.com`（HTTPS/WebSocket）。云环境的域名配置草稿与真实运行环境分开，保存草稿不表示运行网络限制已经改变。
 
 ## 验证
 
@@ -101,7 +101,7 @@ npm run build
 .venv/bin/python -m unittest discover -s services -p 'test_*.py' -v
 ```
 
-单元测试覆盖七天材料、四阶段顺序、答错与重复提交、钻石消耗、每日结算、LLM 双语输出合同、缓存和原有数据兼容。桌面与手机浏览器/API 测试完成整个 47 步章节、两次录音、同稿音频复用、首页语音对话请求、私有内容隔离与照片署名。**测试使用模拟 LLM、TTS 与照片，不调用付费服务，不代表外部提供商或照片上游连通性已验证。**
+单元测试覆盖七天材料、四阶段顺序、答错与重复提交、钻石消耗、每日结算、LLM 双语输出合同、缓存和原有数据兼容。桌面与手机浏览器/API 测试完成整个 47 步章节、两次录音、同稿音频复用、首页语音对话请求、私有内容隔离与照片署名。**测试使用模拟 LLM、TTS，照片使用已收集的本地 CC BY 3.0 素材，不调用付费服务，不代表真实 LLM/TTS 账号已验证。**
 
 Playwright 默认使用本机 `/usr/bin/chromium`；其他机器可设置 `CHROMIUM_PATH` 为 Chrome/Chromium 路径。Linux CI 安装 Chromium 后运行，或修改 Playwright 配置使用下载的浏览器。
 

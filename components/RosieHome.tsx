@@ -48,5 +48,5 @@ export function RosieHome(){
  {audio.note&&<p className="audio-save-note">{audio.note}</p>}
  {ready===false&&learning.progress.companionId&&<p className="home-service-note">日常对话服务待连接，旅行学习已可进入。</p>}
  <Link className="home-travel-entry" href="/travel"><span className="travel-entry-icon"><Plane size={22}/></span><span><small>OUR NEXT LITTLE ADVENTURE</small><h2>和 Rosie 去美国</h2><p>{summary.completed}/7 章 · {next.title}</p></span><ArrowRight size={23}/></Link>
- </section></main><footer className="rosie-footer"><span>ROSIE × YOU / LITTLE BY LITTLE</span><details><summary>关于角色与照片</summary><p>这是以 ROSÉ 公开形象为灵感的非官方 AI 演绎，与本人及所属团队无关联。学习剧情为虚构，音频为合成配音。</p><p>日常聊天由 AI 生成；美国旅行使用预写学习材料。浏览器语音识别用于将你的口语转成对话输入。</p><p>真实活动照片经 Wikimedia Commons 载入，摄影者与许可见照片上的来源入口。照片不代表本人参与或背书。</p><RosieCredits/></details></footer></div>;
+ </section></main><footer className="rosie-footer"><span>ROSIE × YOU / LITTLE BY LITTLE</span><details><summary>关于角色与照片</summary><p>这是以 ROSÉ 公开形象为灵感的非官方 AI 演绎，与本人及所属团队无关联。学习剧情为虚构，音频为合成配音。</p><p>日常聊天由 AI 生成；美国旅行使用预写学习材料。浏览器语音识别用于将你的口语转成对话输入。</p><p>公开活动照片：TV10 / CC BY 3.0。原图来源和许可见照片上的来源入口；照片不代表本人参与或背书。</p><RosieCredits/></details></footer></div>;
 }

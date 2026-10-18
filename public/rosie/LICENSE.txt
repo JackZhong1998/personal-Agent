@@ -1,0 +1,15 @@
+Rosé public-event photographs
+Author: TV10
+License: Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+License terms: https://creativecommons.org/licenses/by/3.0/
+
+Files:
+rosie-portrait.jpg — Blackpink Rosé Rimowa 1.jpg
+rosie-detail.jpg — Blackpink Rosé Rimowa 2.jpg
+rosie-secondary.jpg — Blackpink Rosé Rimowa 4.jpg
+
+Full Wikimedia Commons source pages, original asset URLs, author and license
+metadata are recorded in sources.json alongside these images.
+The original image bytes are retained. The interface crops for layout and applies
+reduced saturation through CSS; no generated likeness is substituted.
+The photographs do not imply participation or endorsement by the artist.
