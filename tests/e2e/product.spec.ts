@@ -107,3 +107,10 @@ test('character drawer edits identity and links to static character, explore and
  await page.getByRole('button',{name:'选择角色',exact:true}).click();await page.getByRole('link',{name:'探索',exact:true}).click();await expect(page.locator('.explore-character')).toHaveCount(4);await page.getByRole('link',{name:'Jisoo 预览'}).click();await expect(page.getByRole('heading',{name:'Jisoo',exact:true})).toBeVisible();await expect(page.getByText('尚未开放',{exact:true})).toBeVisible();expect(providers).toBe(0);
  await page.goto('/');await page.getByRole('button',{name:'选择角色',exact:true}).click();await expect(page.getByRole('button',{name:'修改我的称呼'})).toHaveText('Jackie');
 });
+
+test('homepage relationship counters link to concise rules and preserve fixed viewport',async({page})=>{
+ const {emptyLearning}=await import('../../lib/learning/progress');const fixture=emptyLearning();fixture.activeDays=['2026-10-12','2026-10-15','2026-10-19'];fixture.affection=12;
+ await page.route('**/api/learn',r=>r.fulfill({json:{progress:fixture,displayName:'Jamie'}}));
+ await page.goto('/');const days=page.getByRole('link',{name:'查看相识天数规则'}),heart=page.getByRole('link',{name:'查看心动值规则'});await expect(days).toContainText('3');await expect(heart).toHaveText('12');expect(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight)).toBe(true);
+ await days.click();await expect(page).toHaveURL(/\/relationship#days$/);await expect(page.getByRole('heading',{name:'相识天数',exact:true})).toBeVisible();await expect(page.locator('#affection')).toContainText('漏学一天');await page.getByRole('link',{name:'返回首页',exact:true}).click();await heart.click();await expect(page).toHaveURL(/\/relationship#affection$/);await expect(page.getByRole('heading',{name:'心动值',exact:true})).toBeVisible();
+});

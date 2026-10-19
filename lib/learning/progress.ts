@@ -1,9 +1,10 @@
 import {lessons,lessonSteps,wordQuestion,listeningQuestions,COURSE_ID,COMPANION} from './content';
 import {localDay} from '../story';
 import {AppError} from '../errors';
+import {recordActivity,dailyHeartReward} from './relationship';
 export type LearningRun={cursor:number;listening?:Record<string,number>;recordings:Record<string,{key:string;duration:number}>;completedDay?:string};
-export type LearningProgress={version:string;companionId:string|null;active:string|null;runs:Record<string,LearningRun>;diamonds:number;xp:number;familiarity:number;affection:number;earned:string[];hints:string[];days:string[]};
-export const emptyLearning=():LearningProgress=>({version:COURSE_ID,companionId:null,active:null,runs:{},diamonds:0,xp:0,familiarity:0,affection:0,earned:[],hints:[],days:[]});
+export type LearningProgress={version:string;companionId:string|null;active:string|null;runs:Record<string,LearningRun>;diamonds:number;xp:number;familiarity:number;affection:number;earned:string[];hints:string[];days:string[];activeDays?:string[];heartPolicy?:{startedDay:string;settledThrough:string}};
+export const emptyLearning=():LearningProgress=>({version:COURSE_ID,companionId:null,active:null,runs:{},diamonds:0,xp:0,familiarity:0,affection:0,earned:[],hints:[],days:[],activeDays:[]});
 export function findLesson(id:string){const lesson=lessons.find(l=>l.id===id);if(!lesson)throw new AppError(404,'没有找到这个旅程章节');return lesson;}
 export function requireUnlocked(p:LearningProgress,id:string){
  const lesson=findLesson(id),index=lessons.indexOf(lesson);
@@ -23,8 +24,9 @@ export function advanceLearning(p:LearningProgress,id:string,cursor:number,answe
   throw new AppError(409,'请按顺序完成听力题目');
  }
  const q=step.kind==='quiz'?wordQuestion(scene,step.word):step.kind==='listen'?listeningQuestions(scene)[listenIndex]:step.kind==='read'?scene.reading:null;
- if(q&&answer!==q.answer)return {progress:p,correct:false,duplicate:false,gain:{diamonds:0,xp:0,familiarity:0,affection:0},completed:false};
  if(step.kind==='speak'&&!recording)throw new AppError(400,'请录下你的回应，再继续');
+ recordActivity(p,day);
+ if(q&&answer!==q.answer)return {progress:p,correct:false,duplicate:false,gain:{diamonds:0,xp:0,familiarity:0,affection:0},completed:false};
  const gain={diamonds:0,xp:0,familiarity:0,affection:0};
  if(step.kind==='quiz'){
   const key=id+':'+step.scene+':'+step.word;
@@ -36,9 +38,9 @@ export function advanceLearning(p:LearningProgress,id:string,cursor:number,answe
   gain.xp=listenIndex===listeningQuestions(scene).length-1?1:2;
   if(run.listening[String(cursor)]<listeningQuestions(scene).length){p.xp+=gain.xp;return {progress:p,correct:true,duplicate:false,gain,completed:false};}
  }
- if(step.kind==='speak'){run.recordings[String(cursor)]=recording!;gain.xp=15;gain.familiarity=3;gain.affection=1;}
+ if(step.kind==='speak'){run.recordings[String(cursor)]=recording!;gain.xp=15;gain.familiarity=3;}
  run.cursor++;
- if(run.cursor===lessonSteps(lesson).length&&!run.completedDay){run.completedDay=day;if(!p.days.includes(day))p.days.push(day);gain.familiarity+=4;gain.affection+=3;}
+ if(run.cursor===lessonSteps(lesson).length&&!run.completedDay){run.completedDay=day;gain.affection=dailyHeartReward(p,day);if(!p.days.includes(day))p.days.push(day);gain.familiarity+=4;}
  p.diamonds+=gain.diamonds;p.xp+=gain.xp;p.familiarity+=gain.familiarity;p.affection+=gain.affection;
  return {progress:p,correct:true,duplicate:false,gain,completed:!!run.completedDay};
 }

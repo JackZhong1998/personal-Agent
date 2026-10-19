@@ -1,0 +1,4 @@
+import {CalendarDays,Heart} from 'lucide-react';
+import {StructurePage} from '@/components/StructurePage';
+import {HEART_RULES} from '@/lib/learning/relationship';
+export default function RelationshipPage(){return <StructurePage title="我们的进度"><div className="relationship-rules"><section id="days"><CalendarDays size={23}/><h2>相识天数</h2><p>当天完成一次对话或学习互动，记为 1 天。同一天只计一次；未活跃的日子不计入。</p></section><section id="affection"><Heart size={23}/><h2>心动值</h2><dl><div><dt>每日完成首个章节</dt><dd>+{HEART_RULES.daily}</dd></div><div><dt>连续学习</dt><dd>额外 +1～{HEART_RULES.maxBonus}</dd></div><div><dt>漏学一天</dt><dd>−{HEART_RULES.miss}</dd></div></dl><p>连续第 2 天额外 +1，第 3 天 +2，最高每天额外 +5。中断后重新累计连续天数。</p><p>每天只领一次心动奖励。漏学扣分在次日结算，最低为 0。旧记录不追溯扣分。</p><p>心动解锁内容暂未开放。</p></section><small>每日按北京时间 00:00 更新。</small></div></StructurePage>;}

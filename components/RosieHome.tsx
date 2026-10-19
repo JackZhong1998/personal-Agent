@@ -2,15 +2,16 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import {useCallback,useEffect,useRef,useState,type PointerEvent as ReactPointerEvent} from 'react';
-import {ArrowUpRight,ChevronDown,ChevronLeft,ChevronRight,MessageCircle,Plane,Plus,RotateCcw,ZoomIn,ZoomOut} from 'lucide-react';
+import {CalendarDays,Heart,ArrowUpRight,ChevronDown,ChevronLeft,ChevronRight,MessageCircle,Plane,Plus,RotateCcw,ZoomIn,ZoomOut} from 'lucide-react';
 import {useLearningState} from './useLearningState';
 import {CharacterDrawer} from './CharacterDrawer';
 import {learningSummary} from '@/lib/learning/progress';
+import {relationshipSummary} from '@/lib/learning/relationship';
 const views=[{id:'left',label:'左侧'},{id:'front',label:'正面'},{id:'right',label:'右侧'}];
 const clamp=(v:number,min:number,max:number)=>Math.max(min,Math.min(max,v));
 type Point={x:number;y:number};
 export function RosieHome(){
- const learning=useLearningState(),summary=learningSummary(learning.progress);
+ const learning=useLearningState(),summary=learningSummary(learning.progress),relationship=relationshipSummary(learning.progress);
  const [view,setView]=useState(1),[zoom,setZoom]=useState(1),[pan,setPan]=useState<Point>({x:0,y:0}),[dragging,setDragging]=useState(false),[drawerOpen,setDrawerOpen]=useState(false);
  const stage=useRef<HTMLDivElement>(null),trigger=useRef<HTMLButtonElement>(null),previousDrawer=useRef(false),reduced=useRef(false),points=useRef(new Map<number,Point>()),gesture=useRef<{start:Point;pan:Point;zoom:number;distance:number}|null>(null);
  const closeDrawer=useCallback(()=>setDrawerOpen(false),[]);
@@ -45,6 +46,7 @@ export function RosieHome(){
  <div className={'showcase-figure '+(dragging?'is-dragging':'')} style={{transform:`translate3d(${pan.x}px,${pan.y}px,0) scale(${zoom})`}}><div className="showcase-perspective"><Image key={current.id} src={`/rosie/showcase-${current.id}.png`} alt={`Rosé 全身角色插画，${current.label}视角`} fill sizes="(max-width:760px) 100vw, 720px" quality={75} priority draggable={false}/></div></div>
  </div>
  <header className="showcase-header" inert={drawerOpen}><button className="showcase-identity glass" ref={trigger} aria-label="选择角色" aria-expanded={drawerOpen} aria-haspopup="dialog" onClick={()=>{cancel();setDrawerOpen(true);}}><Image src="/rosie/rosie-rimowa.jpg" alt="" width={34} height={34}/><h1>Rosé</h1><ChevronDown size={14}/></button><Link className="showcase-add glass" href="/scenes/new" aria-label="新增场景"><Plus size={23}/></Link></header>
+ <div className="showcase-relationship glass" inert={drawerOpen} aria-label="关系数值"><Link href="/relationship#days" aria-label="查看相识天数规则"><CalendarDays size={16}/><span>{learning.loaded?relationship.days:'—'}<small>天</small></span></Link><i/><Link href="/relationship#affection" aria-label="查看心动值规则"><Heart size={16}/><span>{learning.loaded?relationship.affection:'—'}</span></Link>{learning.error&&<button onClick={()=>void learning.load()} aria-label="重试加载关系数值">重试</button>}</div>
  <nav className="showcase-scenes" inert={drawerOpen} aria-label="已创建的场景"><Link href="/travel" className="showcase-scene-card glass"><span className="showcase-scene-icon"><Plane size={19}/></span><span><h2>一起去美国</h2><small>{summary.completed} / 7</small></span><ArrowUpRight size={16}/></Link></nav>
  <div className="showcase-bottom" inert={drawerOpen}><div className="showcase-tools glass" role="group" aria-label="角色查看工具"><button aria-label="上一个视角" title="上一个视角" onClick={()=>changeView(-1)}><ChevronLeft size={17}/></button><span aria-live="polite">{current.label}</span><button aria-label="下一个视角" title="下一个视角" onClick={()=>changeView(1)}><ChevronRight size={17}/></button><i/><button aria-label="缩小角色" title="缩小" disabled={zoom<=1} onClick={()=>setZoom(z=>clamp(z-.2,1,2.2))}><ZoomOut size={17}/></button><button aria-label="放大角色" title="放大" disabled={zoom>=2.2} onClick={()=>setZoom(z=>clamp(z+.2,1,2.2))}><ZoomIn size={17}/></button><button aria-label="重置视角" title="重置" onClick={reset}><RotateCcw size={15}/></button></div><Link href="/chat" className="showcase-chat glass" aria-label="进入对话"><MessageCircle size={24}/><span>对话</span></Link></div>
  {drawerOpen&&<CharacterDrawer name={learning.name} registered={!!learning.progress.companionId} onSave={learning.choose} onClose={closeDrawer}/>}
