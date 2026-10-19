@@ -76,8 +76,9 @@ export function LearningJourney({lesson,progress,onProgress,onClose}:{lesson:Les
  <footer className="learning-dock">
  {(error||audio.error)&&<div className="error-message" role="alert">{error||audio.error}{audio.error&&((step.kind==='word'||step.kind==='quiz'||(step.kind==='speak'&&audioTarget==='reply'))&&<button onClick={()=>audio.systemRead(step.kind==='speak'?scene.reply:word!.en+'. '+word!.example)}>系统朗读 · 不保存音频</button>)}</div>}
  {audio.note&&<p className="audio-save-note" role="status">{audio.note}</p>}
- <div className="learning-dock-audio">{audioControls()}</div>
+ <div className="learning-footer-layout"><div className="learning-dock-audio">{audioControls()}</div><div className="learning-primary-action">
  {step.kind==='speak'&&speakPart&&!review?<JourneyRecorder key={`${cursor}-${firstSpeaking?'second':'first'}`} busy={busy||audio.busy} onCapture={audio.clear} onSubmit={upload}/>:<button className="primary-button full" disabled={actionDisabled} onClick={()=>void advance()}>{busy?<span className="spinner"/>:step.kind==='intro'?(introPage===0?'了解了，出发':'开始学单词'):step.kind==='word'?'继续':step.kind==='read'?'确认拼句':step.kind==='speak'?(speakPart?'下一幕':'我要回应'):'确认答案'}<ArrowRight size={17}/></button>}
+ </div></div>
  </footer>
  </>}
  {hintOpen&&<div className="transcript-overlay"><div role="dialog" aria-modal="true" aria-label="听力文稿" className="transcript-sheet"><header><strong>听力文稿</strong><button className="icon-button" aria-label="关闭文稿" onClick={()=>setHintOpen(false)}><X size={18}/></button></header><div className="transcript">{materialBlocks(scene).map((b,i)=><div key={i}><p lang="en">{b.en}</p><p className="story-translation">{b.zh}</p></div>)}</div></div></div>}

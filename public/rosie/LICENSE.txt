@@ -54,3 +54,10 @@ showcase-front.png, showcase-left.png and showcase-right.png are AI-generated
 fictional full-body character renders created with image_gen using the
 credited rosie-portrait.jpg as a visual reference. They are not photographs
 or a real 3D scan. Image viewpoints and interaction details: showcase.json.
+
+Homepage photographic sticker:
+The homepage uses the original rosie-secondary.jpg (TV10, CC BY 3.0, credited above).
+photo-sticker-mask.webp is an AI-assisted background-removal alpha mask based on that photograph.
+The original photographic pixels are displayed through the mask in CSS, with a white sticker outline.
+The photograph is not replaced by an AI-generated portrait.
+bedroom.webp is an AI-generated empty bedroom background.

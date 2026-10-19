@@ -9,7 +9,7 @@ async function fits(page:Page){
 }
 test('home shows one transparent character in a white room, scene and chat without generating speech',async({page},info)=>{
  let generated=0;page.on('request',r=>{if(r.method()==='POST'&&/\/api\/(chat|learn\/audio)/.test(r.url()))generated++;});
- await page.goto('/');await expect(page.getByRole('heading',{name:'Rosé',exact:true})).toBeVisible();await expect(page.locator('.room-background')).toBeVisible();await expect(page.locator('.room-figure img')).toBeVisible();await expect(page.locator('.showcase-tools')).toHaveCount(0);
+ await page.goto('/');await expect(page.getByRole('heading',{name:'Rosé',exact:true})).toBeVisible();await expect(page.locator('.room-background')).toBeVisible();await expect(page.locator('.room-figure img')).toBeVisible();await expect(page.locator('.room-figure img')).toHaveAttribute('src',/rosie-secondary/);await expect(page.locator('.showcase-tools')).toHaveCount(0);
  await expect(page.locator('.showcase-scene-card')).toBeVisible();await expect(page.getByRole('link',{name:'进入对话',exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight)).toBe(true);await page.screenshot({path:`test-results/showcase-${info.project.name}.png`,animations:'disabled'});expect(generated).toBe(0);
  await page.getByRole('link',{name:'进入对话',exact:true}).click();await expect(page).toHaveURL(/\/chat$/);await name(page);await page.getByRole('link',{name:'返回角色展示',exact:true}).click();await page.locator('.showcase-scene-card').click();await expect(page).toHaveURL(/\/travel$/);await expect(page.locator('.course-day')).toHaveCount(7);
 });
@@ -20,7 +20,7 @@ test('chapter supports all listening questions, page-sized audio, sentence order
  for(let cursor=0;cursor<steps.length;cursor++){
   const step=steps[cursor],scene=first.scenes[step.scene];await expect(page.locator('.learning-toolbar>small')).toHaveText(`${cursor+1} / ${steps.length}`);
   if(step.kind==='intro'){await expect(page.locator('.learning-guide')).toContainText('答错扣 1 钻石');await fits(page);await page.getByRole('button',{name:'了解了，出发',exact:true}).click();await page.getByRole('button',{name:'开始学单词',exact:true}).click();continue;}
-  if(step.kind==='word'){await expect(page.locator('.word-meaning')).toHaveText(scene.words[step.word].zh);await fits(page);if(cursor===1)await page.screenshot({path:`test-results/focused-word-${info.project.name}.png`});await page.getByRole('button',{name:'继续',exact:true}).click();continue;}
+  if(step.kind==='word'){await expect(page.locator('.word-meaning')).toHaveText(scene.words[step.word].zh);await fits(page);if(cursor===1){const play=await page.locator('.learning-dock .lesson-audio').boundingBox(),confirm=await page.locator('.learning-primary-action>.primary-button').boundingBox();expect(Math.abs(play!.y-confirm!.y)).toBeLessThan(2);expect(play!.x).toBeLessThan(confirm!.x);await page.screenshot({path:`test-results/focused-word-${info.project.name}.png`});}await page.getByRole('button',{name:'继续',exact:true}).click();continue;}
   if(step.kind==='speak'){
    await expect(page.locator('.companion-line p')).toHaveText(scene.message);await page.getByRole('button',{name:'显示中文 · 2 钻石'}).click();await expect(page.locator('.companion-line small')).toHaveText(scene.messageZh);
    await page.getByRole('button',{name:'我要回应',exact:true}).click();await expect(page.locator('.reply-script p')).toHaveText(scene.reply);await expect(page.locator('.reply-script small')).toHaveText(scene.replyZh);await fits(page);
