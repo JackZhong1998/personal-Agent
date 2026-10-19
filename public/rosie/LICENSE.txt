@@ -61,3 +61,9 @@ photo-sticker-mask.webp is an AI-assisted background-removal alpha mask based on
 The original photographic pixels are displayed through the mask in CSS, with a white sticker outline.
 The photograph is not replaced by an AI-generated portrait.
 bedroom.webp is an AI-generated empty bedroom background.
+
+Homepage scrapbook collage:
+guitar-sticker.webp is an AI-generated acoustic guitar sticker.
+The concert Polaroid uses the original rosie-sofi-14.png (theCwE, CC BY 3.0),
+credited above, cropped into a paper frame. Bedroom and guitar images are
+decorative fictional assets, not photographs of the artist's possessions.

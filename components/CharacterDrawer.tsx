@@ -14,6 +14,6 @@ export function CharacterDrawer({name,registered,initialEditing=false,onSave,onC
  {editing&&<div className="drawer-profile"><NameSetup initial={name} editing={registered} onSave={async value=>{await onSave(value);onClose();}}/></div>}
  <div className="drawer-actions"><Link href="/characters/new"><Plus size={18}/>新增</Link><Link href="/explore"><Compass size={18}/>探索</Link></div>
  <nav className="character-list" aria-label="角色">{characters.map(c=>c.available?<button key={c.id} className="character-row active" onClick={onClose} aria-current="true"><Image src={c.image} alt="" width={48} height={48}/><span>{c.name}</span><Check size={16}/></button>:<Link key={c.id} className="character-row" href={'/characters/'+c.id}><Image src={c.image} alt="" width={48} height={48}/><span>{c.name}</span></Link>)}</nav>
- </div><footer className="drawer-footer"><details className="drawer-about"><summary>关于与来源</summary><p>非官方 AI 角色演绎，与艺人本人及团队无关联。角色全身图为 AI 生成。</p><RosieCredits/>{characterSources.map(s=><p key={s.id}><a href={s.source} target="_blank" rel="noreferrer">{s.artist}</a> · <a href={s.licenseUrl} target="_blank" rel="noreferrer">{s.license}</a></p>)}</details></footer>
+ </div><footer className="drawer-footer"><details className="drawer-about"><summary>关于与来源</summary><p>非官方 AI 角色演绎，与艺人本人及团队无关联。配音为合成语音。</p><RosieCredits/>{characterSources.map(s=><p key={s.id}><a href={s.source} target="_blank" rel="noreferrer">{s.artist}</a> · <a href={s.licenseUrl} target="_blank" rel="noreferrer">{s.license}</a></p>)}</details></footer>
  </aside></div>;
 }
