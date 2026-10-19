@@ -1,6 +1,6 @@
 import {test,expect,type Page} from '@playwright/test';
 import {lessons,lessonSteps,wordQuestion,listeningQuestions} from '../../lib/learning/content';
-import {readingPages,sentenceTokens} from '../../lib/learning/reading';
+import {phraseTokens,readingPages} from '../../lib/learning/reading';
 const first=lessons[0];
 const wav=Buffer.alloc(44+3200);wav.write('RIFF');wav.writeUInt32LE(wav.length-8,4);wav.write('WAVE',8);wav.write('fmt ',12);wav.writeUInt32LE(16,16);wav.writeUInt16LE(1,20);wav.writeUInt16LE(1,22);wav.writeUInt32LE(16000,24);wav.writeUInt32LE(32000,28);wav.writeUInt16LE(2,32);wav.writeUInt16LE(16,34);wav.write('data',36);wav.writeUInt32LE(3200,40);
 async function name(page:Page){if(await page.locator('.chat-home,.character-home').count()){await page.getByRole('button',{name:'选择角色',exact:true}).click();await page.getByRole('button',{name:'修改我的称呼',exact:true}).click();}await page.getByPlaceholder('你的名字或昵称').fill('Jamie');await page.getByRole('checkbox').check();await page.getByRole('button',{name:'就这样叫我',exact:true}).click();}
@@ -32,9 +32,9 @@ test('chapter supports all listening questions, page-sized audio, sentence order
    for(const [index,q] of listeningQuestions(scene).entries())await page.locator('.listening-item').nth(index).locator('.learning-choices>button').nth(q.answer).click();await fits(page);await page.getByRole('button',{name:'确认答案',exact:true}).click();
   }else if(step.kind==='read'){
    const pages=readingPages(scene);for(const [i,p] of pages.entries()){
-    await expect(page.locator('.reading-manuscript .story-translation')).toHaveText(p.zh);await expect(page.locator('.reading-manuscript .story-passage')).toHaveCount(0);
+    await expect(page.locator('.reading-manuscript .story-translation')).toHaveCount(0);await expect(page.locator('.reading-manuscript .story-passage')).toHaveCount(0);
     await expect.poll(()=>played.some(p=>p.cursor===cursor&&p.part===i)).toBe(true);await expect(page.getByRole('slider',{name:'拖动语音位置'})).toBeVisible();await page.getByRole('button',{name:'0.5×'}).click();
-    const words=sentenceTokens(p.en);for(let id=0;id<words.length;id++)await page.locator(`.word-bank button[data-word-id="${id}"]`).click();await fits(page);if(i===0)await page.screenshot({path:`test-results/focused-read-${info.project.name}.png`});await page.getByRole('button',{name:'确认拼句',exact:true}).click();
+    for(const language of ['zh','en'] as const){if(language==='en')await expect(page.locator('.reading-manuscript .story-translation')).toHaveText(p.zh);const phrases=phraseTokens(p[language],language);for(let id=0;id<phrases.length;id++)await page.locator(`.word-bank button[data-word-id="${id}"]`).click();await fits(page);if(i===0&&language==='en')await page.screenshot({path:`test-results/focused-read-${info.project.name}.png`});await page.getByRole('button',{name:'确认拼句',exact:true}).click();}
    }
   }else{
    const q=wordQuestion(scene,'word' in step?step.word:0);
@@ -63,7 +63,7 @@ test('every scene keeps words, bilingual reading and spoken reply above the acti
     for(const previous of lessons.slice(0,lesson.day-1))fixture.runs[previous.id]={cursor:47,recordings:{},completedDay:'2026-10-18'};
     fixture.runs[lesson.id]={cursor,recordings:{}};
     await page.goto('/travel');await page.locator('.course-day').nth(lesson.day-1).click();await expect(page.locator('.learning-toolbar>small')).toHaveText(`${cursor+1} / 47`);
-    if(kind==='read'){await expect(page.locator('.reading-manuscript .story-translation')).toBeVisible();await fits(page);}else if(kind==='speak'){await fits(page);await page.getByRole('button',{name:'我要回应',exact:true}).click();await fits(page);}else await fits(page);
+    if(kind==='read'){await expect(page.getByText('听英文 · 拼中文')).toBeVisible();await fits(page);}else if(kind==='speak'){await fits(page);await page.getByRole('button',{name:'我要回应',exact:true}).click();await fits(page);}else await fits(page);
    }
   }
  }

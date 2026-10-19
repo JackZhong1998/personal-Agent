@@ -2,8 +2,8 @@ import {lessons,lessonSteps,wordQuestion,listeningQuestions,COURSE_ID,COMPANION}
 import {localDay} from '../story';
 import {AppError} from '../errors';
 import {recordActivity,dailyHeartReward} from './relationship';
-import {readingPages,sentenceTokens} from './reading';
-export type LearningRun={cursor:number;listening?:Record<string,number>;reading?:Record<string,number>;speaking?:Record<string,{key:string;duration:number}>;recordings:Record<string,{key:string;duration:number}>;completedDay?:string};
+import {readingPages,phraseTokens,type ReadingLanguage} from './reading';
+export type LearningRun={cursor:number;listening?:Record<string,number>;reading?:Record<string,number>;readingChinese?:Record<string,number>;speaking?:Record<string,{key:string;duration:number}>;recordings:Record<string,{key:string;duration:number}>;completedDay?:string};
 export type LearningProgress={version:string;companionId:string|null;active:string|null;runs:Record<string,LearningRun>;diamonds:number;xp:number;familiarity:number;affection:number;earned:string[];hints:string[];translations?:string[];days:string[];activeDays?:string[];heartPolicy?:{startedDay:string;settledThrough:string}};
 export const emptyLearning=():LearningProgress=>({version:COURSE_ID,companionId:null,active:null,runs:{},diamonds:0,xp:0,familiarity:0,affection:0,earned:[],hints:[],translations:[],days:[],activeDays:[]});
 export function findLesson(id:string){const lesson=lessons.find(l=>l.id===id);if(!lesson)throw new AppError(404,'没有找到这个旅程章节');return lesson;}
@@ -45,13 +45,15 @@ export function advanceLearning(p:LearningProgress,id:string,cursor:number,answe
  p.diamonds+=gain.diamonds;p.xp+=gain.xp;p.familiarity+=gain.familiarity;p.affection+=gain.affection;
  return {progress:p,correct:true,duplicate:false,gain,completed:!!run.completedDay};
 }
-export function submitReadingPart(p:LearningProgress,id:string,cursor:number,part:number,order:number[],day=localDay('Asia/Shanghai')){
+export function submitReadingPart(p:LearningProgress,id:string,cursor:number,part:number,language:ReadingLanguage,order:number[],day=localDay('Asia/Shanghai')){
  const lesson=requireUnlocked(p,id),run=p.runs[id];if(!run||run.cursor!==cursor)throw new AppError(409,'请先完成当前学习步骤');const step=lessonSteps(lesson)[cursor];if(step?.kind!=='read')throw new AppError(400,'现在不在拼句阶段');
  const pages=readingPages(lesson.scenes[step.scene]),current=run.reading?.[String(cursor)]||0;
- if(part<current)return {progress:p,correct:true,duplicate:true,gain:{diamonds:0,xp:0,familiarity:0,affection:0},completed:false};
+ if(part<current||(language==='zh'&&run.readingChinese?.[String(cursor)]===part))return {progress:p,correct:true,duplicate:true,gain:{diamonds:0,xp:0,familiarity:0,affection:0},completed:false};
  if(part!==current||part>=pages.length)throw new AppError(409,'请按顺序完成每段拼句');
- recordActivity(p,day);const tokens=sentenceTokens(pages[part].en),correct=order.length===tokens.length&&order.every((n,i)=>n===i);
+ if(language==='en'&&run.readingChinese?.[String(cursor)]!==part)throw new AppError(409,'请先听音拼出中文');
+ recordActivity(p,day);const tokens=phraseTokens(pages[part][language],language),correct=order.length===tokens.length&&order.every((n,i)=>n===i);
  if(!correct){const before=p.diamonds;p.diamonds=Math.max(0,p.diamonds-1);return {progress:p,correct:false,duplicate:false,gain:{diamonds:p.diamonds-before,xp:0,familiarity:0,affection:0},completed:false};}
+ if(language==='zh'){run.readingChinese??={};run.readingChinese[String(cursor)]=part;return {progress:p,correct:true,duplicate:false,gain:{diamonds:0,xp:0,familiarity:0,affection:0},completed:false};}
  run.reading??={};run.reading[String(cursor)]=part+1;const gain={diamonds:0,xp:part===pages.length-1?5:0,familiarity:0,affection:0};
  if(part===pages.length-1)run.cursor++;p.xp+=gain.xp;return {progress:p,correct:true,duplicate:false,gain,completed:false};
 }

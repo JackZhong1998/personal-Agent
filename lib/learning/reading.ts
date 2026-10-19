@@ -20,4 +20,16 @@ export function readingPages(scene:Scene){
  });
 }
 export const sentenceTokens=(text:string)=>text.match(/[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu)||[];
-export function shuffledTokens(text:string){const tokens=sentenceTokens(text).map((word,id)=>({word,id}));let seed=0;for(const char of text)seed=(Math.imul(seed,31)+char.charCodeAt(0))|0;for(let i=tokens.length-1;i>0;i--){seed=(Math.imul(seed,1664525)+1013904223)|0;const j=(seed>>>0)%(i+1);[tokens[i],tokens[j]]=[tokens[j],tokens[i]];}return tokens;}
+export type ReadingLanguage='zh'|'en';
+export function phraseTokens(text:string,language:ReadingLanguage){
+ if(language==='en')return (text.match(/[^,.!?;:]+[,.!?;:]?/g)||[]).flatMap(clause=>{
+  const words=sentenceTokens(clause),groups=Math.ceil(words.length/4),size=Math.ceil(words.length/groups);
+  return Array.from({length:groups},(_,i)=>words.slice(i*size,(i+1)*size).join(' ')).filter(Boolean);
+ });
+ return (text.match(/[^，。！？；、,.!?;:]+[，。！？；、,.!?;:]?/g)||[]).flatMap(clause=>{
+  const marks=clause.match(/[，。！？；、,.!?;:]+$/)?.[0]||'',chars=Array.from(clause.slice(0,clause.length-marks.length).trim());
+  const groups=Math.ceil(chars.length/7),size=Math.ceil(chars.length/groups);
+  return Array.from({length:groups},(_,i)=>chars.slice(i*size,(i+1)*size).join('')+(i===groups-1?marks:'')).filter(Boolean);
+ });
+}
+export function shuffledPhrases(text:string,language:ReadingLanguage){const tokens=phraseTokens(text,language).map((word,id)=>({word,id}));let seed=0;for(const char of text+language)seed=(Math.imul(seed,31)+char.charCodeAt(0))|0;for(let i=tokens.length-1;i>0;i--){seed=(Math.imul(seed,1664525)+1013904223)|0;const j=(seed>>>0)%(i+1);[tokens[i],tokens[j]]=[tokens[j],tokens[i]];}return tokens;}
