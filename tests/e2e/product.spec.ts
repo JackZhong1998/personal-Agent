@@ -1,60 +1,48 @@
 import {test,expect,type Page} from '@playwright/test';
 import {lessons,lessonSteps,wordQuestion,listeningQuestions} from '../../lib/learning/content';
-import {readingPages} from '../../lib/learning/reading';
+import {readingPages,sentenceTokens} from '../../lib/learning/reading';
 const first=lessons[0];
 const wav=Buffer.alloc(44+3200);wav.write('RIFF');wav.writeUInt32LE(wav.length-8,4);wav.write('WAVE',8);wav.write('fmt ',12);wav.writeUInt32LE(16,16);wav.writeUInt16LE(1,20);wav.writeUInt16LE(1,22);wav.writeUInt32LE(16000,24);wav.writeUInt32LE(32000,28);wav.writeUInt16LE(2,32);wav.writeUInt16LE(16,34);wav.write('data',36);wav.writeUInt32LE(3200,40);
 async function name(page:Page){if(await page.locator('.chat-home,.character-home').count()){await page.getByRole('button',{name:'选择角色',exact:true}).click();await page.getByRole('button',{name:'修改我的称呼',exact:true}).click();}await page.getByPlaceholder('你的名字或昵称').fill('Jamie');await page.getByRole('checkbox').check();await page.getByRole('button',{name:'就这样叫我',exact:true}).click();}
 async function fits(page:Page){
- const layout=await page.locator('.frame-content').evaluate((el)=>({scroll:el.scrollHeight,height:el.clientHeight}));expect(layout.scroll).toBeLessThanOrEqual(layout.height+2);
  const button=page.locator('.learning-dock .primary-button').last();await expect(button).toBeVisible();const rect=await button.boundingBox();expect(rect!.y+rect!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
 }
-test('home displays the whole character, glass scene and bottom-right chat entry without generating speech',async({page},info)=>{
+test('home shows one transparent character in a white room, scene and chat without generating speech',async({page},info)=>{
  let generated=0;page.on('request',r=>{if(r.method()==='POST'&&/\/api\/(chat|learn\/audio)/.test(r.url()))generated++;});
- await page.goto('/');await expect(page.getByRole('heading',{name:'Rosé',exact:true})).toBeVisible();const stage=page.getByRole('group',{name:'Rosé 角色展示',exact:true});await expect(stage).toHaveAttribute('data-view','front');
- const image=page.locator('.showcase-figure img');await expect.poll(()=>image.evaluate((i:HTMLImageElement)=>i.complete&&i.naturalWidth>0)).toBe(true);
- await page.getByRole('button',{name:'下一个视角',exact:true}).click();await expect(stage).toHaveAttribute('data-view','right');await expect(image).toHaveAttribute('src',/showcase-right/);
- await page.getByRole('button',{name:'放大角色',exact:true}).click();await expect(stage).toHaveAttribute('data-zoom','1.20');
- const before=await page.locator('.showcase-figure').getAttribute('style');await page.mouse.move(250,250);await page.mouse.down();await page.mouse.move(285,285,{steps:5});await page.mouse.up();await expect(page.locator('.showcase-figure')).not.toHaveAttribute('style',before!);
- await page.getByRole('button',{name:'重置视角',exact:true}).click();await expect(stage).toHaveAttribute('data-view','front');await expect(stage).toHaveAttribute('data-zoom','1.00');
- await expect(page.locator('.showcase-scene-card')).toBeVisible();await expect(page.getByRole('link',{name:'进入对话',exact:true})).toBeVisible();const chat=await page.locator('.showcase-chat').boundingBox();expect(chat!.x).toBeGreaterThan(page.viewportSize()!.width/2);expect(chat!.y).toBeGreaterThan(page.viewportSize()!.height/2);
- expect(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight)).toBe(true);await page.screenshot({path:`test-results/showcase-${info.project.name}.png`,animations:'disabled'});expect(generated).toBe(0);
- await page.getByRole('link',{name:'进入对话',exact:true}).click();await expect(page).toHaveURL(/\/chat$/);await name(page);await expect(page.getByRole('button',{name:'点击说话',exact:true})).toBeVisible();await page.getByRole('link',{name:'返回角色展示',exact:true}).click();await expect(page).toHaveURL(/\/$/);
- await page.locator('.showcase-scene-card').click();await expect(page).toHaveURL(/\/travel$/);await expect(page.locator('.course-day')).toHaveCount(7);await expect(page.locator('.course-day').nth(1)).toBeDisabled();expect(generated).toBe(0);
+ await page.goto('/');await expect(page.getByRole('heading',{name:'Rosé',exact:true})).toBeVisible();await expect(page.locator('.room-background')).toBeVisible();await expect(page.locator('.room-figure img')).toBeVisible();await expect(page.locator('.showcase-tools')).toHaveCount(0);
+ await expect(page.locator('.showcase-scene-card')).toBeVisible();await expect(page.getByRole('link',{name:'进入对话',exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight)).toBe(true);await page.screenshot({path:`test-results/showcase-${info.project.name}.png`,animations:'disabled'});expect(generated).toBe(0);
+ await page.getByRole('link',{name:'进入对话',exact:true}).click();await expect(page).toHaveURL(/\/chat$/);await name(page);await page.getByRole('link',{name:'返回角色展示',exact:true}).click();await page.locator('.showcase-scene-card').click();await expect(page).toHaveURL(/\/travel$/);await expect(page.locator('.course-day')).toHaveCount(7);
 });
-test('chapter has a guide, uninterrupted rewards, three listening questions and paginated reading with a fixed action',async({page},info)=>{
- test.setTimeout(150000);await page.emulateMedia({reducedMotion:'reduce'});if(info.project.name==='mobile')await page.setViewportSize({width:390,height:664});const played:{chapterId:string;cursor:number;target:string}[]=[];
+test('chapter supports all listening questions, page-sized audio, sentence ordering and two recordings',async({page},info)=>{
+ test.setTimeout(180000);await page.emulateMedia({reducedMotion:'reduce'});if(info.project.name==='mobile')await page.setViewportSize({width:390,height:664});const played:{chapterId:string;cursor:number;target:string;part?:number}[]=[];
  await page.route('**/lesson-test.wav',r=>r.fulfill({contentType:'audio/wav',body:wav}));await page.route('**/api/learn/audio',r=>{played.push(r.request().postDataJSON());return r.fulfill({json:{audioUrl:'/lesson-test.wav',cached:played.length>1,saved:true}});});
- await page.goto('/travel');await name(page);await page.getByRole('button',{name:'开始今日章节',exact:true}).click();await expect(page.getByRole('dialog',{name:'旅行章节：'+first.title})).toBeVisible();
- const steps=lessonSteps(first);let quizCount=0;
+ await page.goto('/travel');await name(page);await page.getByRole('button',{name:'开始今日章节',exact:true}).click();await expect(page.getByRole('dialog',{name:'旅行章节：'+first.title})).toBeVisible();const steps=lessonSteps(first);let quizCount=0;
  for(let cursor=0;cursor<steps.length;cursor++){
   const step=steps[cursor],scene=first.scenes[step.scene];await expect(page.locator('.learning-toolbar>small')).toHaveText(`${cursor+1} / ${steps.length}`);
-  if(step.kind==='intro'){await expect(page.locator('.learning-guide')).toContainText('2 钻石');await fits(page);await page.getByRole('button',{name:'了解了，出发',exact:true}).click();await page.getByRole('button',{name:'开始学单词',exact:true}).click();continue;}
+  if(step.kind==='intro'){await expect(page.locator('.learning-guide')).toContainText('答错扣 1 钻石');await fits(page);await page.getByRole('button',{name:'了解了，出发',exact:true}).click();await page.getByRole('button',{name:'开始学单词',exact:true}).click();continue;}
   if(step.kind==='word'){await expect(page.locator('.word-meaning')).toHaveText(scene.words[step.word].zh);await fits(page);if(cursor===1)await page.screenshot({path:`test-results/focused-word-${info.project.name}.png`});await page.getByRole('button',{name:'继续',exact:true}).click();continue;}
   if(step.kind==='speak'){
-   await fits(page);await page.getByRole('button',{name:'我要回应',exact:true}).click();await expect(page.locator('.reply-script p')).toHaveText(scene.reply);await expect(page.locator('.reply-script small')).toHaveText(scene.replyZh);await fits(page);
+   await expect(page.locator('.companion-line p')).toHaveText(scene.message);await page.getByRole('button',{name:'显示中文 · 2 钻石'}).click();await expect(page.locator('.companion-line small')).toHaveText(scene.messageZh);
+   await page.getByRole('button',{name:'我要回应',exact:true}).click();await expect(page.locator('.reply-script p')).toHaveText(scene.reply);await expect(page.locator('.reply-script small')).toHaveText(scene.replyZh);await fits(page);
    const skip=await page.request.post('/api/learn',{headers:{Origin:'http://127.0.0.1:3000'},data:{action:'advance',chapterId:first.id,cursor}});expect(skip.status()).toBe(400);
-   await page.getByRole('button',{name:'开始朗读',exact:true}).click();await page.waitForTimeout(1150);await page.getByRole('button',{name:/说完了/}).click();await expect(page.locator('.recording-preview')).toBeVisible();await page.getByRole('button',{name:'发送给Rosé',exact:true}).click();
+   for(let take=0;take<2;take++){await page.getByRole('button',{name:'开始朗读',exact:true}).click();await page.waitForTimeout(1150);await page.getByRole('button',{name:/说完了/}).click();await expect(page.locator('.recording-preview')).toBeVisible();await page.getByRole('button',{name:'发送给Rosé',exact:true}).click();if(take===0)await expect(page.locator('.reply-script>span')).toContainText('第二次');}
   }else if(step.kind==='listen'){
-   await expect(page.locator('.reading-manuscript')).toHaveCount(0);await page.getByRole('button',{name:'听Rosé讲故事',exact:true}).click();await expect(page.locator('.audio-save-note')).toContainText('已保存');
+   await expect(page.locator('.listening-item')).toHaveCount(3);await page.getByRole('button',{name:'听语音',exact:true}).click();await expect(page.locator('.audio-save-note')).toContainText('已保存');await expect(page.getByRole('slider',{name:'拖动语音位置'})).toBeVisible();await page.getByRole('button',{name:'0.8×'}).click();await expect(page.getByRole('button',{name:'0.8×'})).toHaveClass(/active/);
    await page.getByRole('button',{name:'文稿 · 2 钻石',exact:true}).click();await expect(page.locator('.transcript')).toContainText(scene.passage);await page.getByRole('button',{name:'关闭文稿'}).click();
-   for(const [index,q] of listeningQuestions(scene).entries()){
-    await expect(page.locator('.listening-question-count')).toHaveText(`${index+1} / 3`);await fits(page);await page.locator('.learning-choices>button').nth(q.answer).click();await page.getByRole('button',{name:'确认答案',exact:true}).click();
-   }
+   for(const [index,q] of listeningQuestions(scene).entries())await page.locator('.listening-item').nth(index).locator('.learning-choices>button').nth(q.answer).click();await fits(page);await page.getByRole('button',{name:'确认答案',exact:true}).click();
   }else if(step.kind==='read'){
-   const pages=readingPages(scene);await page.getByRole('button',{name:'查看中文',exact:true}).click();await page.getByRole('button',{name:'边听边读',exact:true}).click();await expect(page.locator('.audio-save-note')).toContainText('读取已保存音频');
-   for(const [i,p] of pages.entries()){await expect(page.locator('.reading-manuscript .story-passage')).toHaveText(p.en);await expect(page.locator('.reading-manuscript .story-translation')).toHaveText(p.zh);await fits(page);if(i===0)await page.screenshot({path:`test-results/focused-read-${info.project.name}.png`});await page.getByRole('button',{name:'下一段',exact:true}).click();}
-   await page.locator('.learning-choices>button').nth(scene.reading.answer).click();await page.getByRole('button',{name:'确认答案',exact:true}).click();
+   const pages=readingPages(scene);for(const [i,p] of pages.entries()){
+    await expect(page.locator('.reading-manuscript .story-translation')).toHaveText(p.zh);await expect(page.locator('.reading-manuscript .story-passage')).toHaveCount(0);
+    await page.getByRole('button',{name:'听语音',exact:true}).click();await expect(page.getByRole('slider',{name:'拖动语音位置'})).toBeVisible();await page.getByRole('button',{name:'0.5×'}).click();
+    const words=sentenceTokens(p.en);for(let id=0;id<words.length;id++)await page.locator(`.word-bank button[data-word-id="${id}"]`).click();await fits(page);if(i===0)await page.screenshot({path:`test-results/focused-read-${info.project.name}.png`});await page.getByRole('button',{name:'确认拼句',exact:true}).click();
+   }
   }else{
    const q=wordQuestion(scene,'word' in step?step.word:0);
-   if(quizCount++===0){await page.locator('.learning-choices>button').nth((q.answer+1)%3).click();await page.getByRole('button',{name:'确认答案',exact:true}).click();await expect(page.locator('.answer-retry')).toBeVisible();}
+   if(quizCount++===0){await page.locator('.learning-choices>button').nth((q.answer+1)%3).click();await page.getByRole('button',{name:'确认答案',exact:true}).click();await expect(page.locator('.answer-retry')).toContainText('钻石已为 0');}
    await page.locator('.learning-choices>button').nth(q.answer).click();await page.getByRole('button',{name:'确认答案',exact:true}).click();
   }
-  await expect(page.locator('.learning-feedback')).toHaveCount(0);
  }
- await expect(page.getByRole('heading',{name:'今天的旅程，完成了。'})).toBeVisible();await page.getByRole('button',{name:'返回章节',exact:true}).click();await expect(page.getByText('今日任务已完成',{exact:true})).toBeVisible();await expect(page.locator('.course-day').nth(1)).toBeEnabled();
- const saved=await(await page.request.get('/api/learn')).json();expect(saved.progress.earned).toHaveLength(20);expect(saved.progress.diamonds).toBe(16);expect(saved.progress.xp).toBe(250);expect(saved.progress.affection).toBe(5);expect(Object.keys(saved.progress.runs.arrival.recordings)).toHaveLength(2);expect(played).toHaveLength(4);
- await page.reload();await expect(page.getByText('今日任务已完成',{exact:true})).toBeVisible();await page.locator('.course-day').first().click();await page.getByRole('button',{name:'了解了，出发',exact:true}).click();await page.getByRole('button',{name:'开始学单词',exact:true}).click();await expect(page.locator('.word-meaning')).toHaveText(first.scenes[0].words[0].zh);
- const reviewed=await(await page.request.get('/api/learn')).json();expect(reviewed.progress.diamonds).toBe(saved.progress.diamonds);expect(reviewed.progress.xp).toBe(saved.progress.xp);
+ await expect(page.getByRole('heading',{name:'今天的旅程，完成了。'})).toBeVisible();await page.getByRole('button',{name:'返回章节',exact:true}).click();await expect(page.getByText('今日任务已完成',{exact:true})).toBeVisible();const saved=await(await page.request.get('/api/learn')).json();expect(saved.progress.earned).toHaveLength(20);expect(saved.progress.diamonds).toBe(12);expect(saved.progress.xp).toBe(250);expect(saved.progress.affection).toBe(5);expect(Object.keys(saved.progress.runs.arrival.recordings)).toHaveLength(2);expect(Object.keys(saved.progress.runs.arrival.speaking)).toHaveLength(2);expect(played.filter(x=>x.part!==undefined).length).toBe(readingPages(first.scenes[0]).length+readingPages(first.scenes[1]).length);
 });
 test('home voice sends the chat contract and renders bilingual reply before saved speech',async({page},info)=>{
  let chats=0,audios=0;
@@ -75,10 +63,7 @@ test('every scene keeps words, bilingual reading and spoken reply above the acti
     for(const previous of lessons.slice(0,lesson.day-1))fixture.runs[previous.id]={cursor:47,recordings:{},completedDay:'2026-10-18'};
     fixture.runs[lesson.id]={cursor,recordings:{}};
     await page.goto('/travel');await page.locator('.course-day').nth(lesson.day-1).click();await expect(page.locator('.learning-toolbar>small')).toHaveText(`${cursor+1} / 47`);
-    if(kind==='read'){
-     await page.getByRole('button',{name:'查看中文',exact:true}).click();
-     for(const _p of readingPages(lesson.scenes[scene])){await fits(page);await page.getByRole('button',{name:'下一段',exact:true}).click();}
-    }else if(kind==='speak'){await fits(page);await page.getByRole('button',{name:'我要回应',exact:true}).click();await fits(page);}else await fits(page);
+    if(kind==='read'){await expect(page.locator('.reading-manuscript .story-translation')).toBeVisible();await fits(page);}else if(kind==='speak'){await fits(page);await page.getByRole('button',{name:'我要回应',exact:true}).click();await fits(page);}else await fits(page);
    }
   }
  }

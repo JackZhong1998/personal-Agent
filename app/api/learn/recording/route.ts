@@ -14,7 +14,7 @@ export async function POST(req:Request){return route(async()=>{
   const p=await readLearning(owner),lesson=requireUnlocked(p,id),run=p.runs[id];if(!run)throw new AppError(409,'请先进入章节');
   if(cursor<run.cursor){if(!run.recordings[String(cursor)])throw new AppError(409,'这一步不是口语录音');return Response.json({progress:p,correct:true,duplicate:true,gain:{diamonds:0,xp:0,familiarity:0,affection:0}});}
   if(cursor!==run.cursor||lessonSteps(lesson)[cursor]?.kind!=='speak')throw new AppError(409,'请先完成当前学习步骤');
-  const key=owner+'/learning-recordings/'+id+'/'+cursor;await putAudio(key,bytes,file.type);
+  const take=run.speaking?.[String(cursor)]?2:1;const key=owner+'/learning-recordings/'+id+'/'+cursor+'-'+take;await putAudio(key,bytes,file.type);
   const result=advanceLearning(p,id,cursor,undefined,{key,duration});await saveLearning(owner,p);return Response.json(result);
  });
 });}

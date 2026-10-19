@@ -19,3 +19,5 @@ export function readingPages(scene:Scene){
   return pages;
  });
 }
+export const sentenceTokens=(text:string)=>text.match(/[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu)||[];
+export function shuffledTokens(text:string){const tokens=sentenceTokens(text).map((word,id)=>({word,id}));let seed=0;for(const char of text)seed=(Math.imul(seed,31)+char.charCodeAt(0))|0;for(let i=tokens.length-1;i>0;i--){seed=(Math.imul(seed,1664525)+1013904223)|0;const j=(seed>>>0)%(i+1);[tokens[i],tokens[j]]=[tokens[j],tokens[i]];}return tokens;}

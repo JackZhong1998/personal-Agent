@@ -3,10 +3,11 @@ import {AppError,getRecord,identity,jsonBody,quota,route,sameOrigin} from '@/lib
 import {speech} from '@/lib/speech';
 import {COMPANION,lessonSteps,materialText} from '@/lib/learning/content';
 import {requireUnlocked} from '@/lib/learning/progress';
+import {readingPages} from '@/lib/learning/reading';
 import {readLearning} from '@/lib/learning/server';
 export const maxDuration=120;
 export async function POST(req:Request){return route(async()=>{
- sameOrigin(req);const owner=await identity();const b=z.object({chapterId:z.string().max(50).optional(),cursor:z.number().int().min(0).max(100).optional(),target:z.enum(['preview','material','reply'])}).parse(await jsonBody(req));
+ sameOrigin(req);const owner=await identity();const b=z.object({chapterId:z.string().max(50).optional(),cursor:z.number().int().min(0).max(100).optional(),part:z.number().int().min(0).max(30).optional(),target:z.enum(['preview','material','reply'])}).parse(await jsonBody(req));
  let text:string,kind:'role'|'guide'='role',privateOwner:string|undefined;
  if(b.target==='preview'){text=COMPANION.intro;}else{
   if(!b.chapterId||b.cursor===undefined)throw new AppError(400,'缺少章节信息');
@@ -19,6 +20,7 @@ export async function POST(req:Request){return route(async()=>{
   }else if(step.kind==='intro'){
    const profile=await getRecord<{displayName:string}>(owner+'/profile');text=(profile?.displayName?profile.displayName+', ':'')+lesson.intro;privateOwner=profile?.displayName?owner:undefined;
   }else if(step.kind==='word'||step.kind==='quiz'){const w=scene.words[step.word];text=w.en+'. '+w.example;kind='guide';}
+  else if(step.kind==='read'){const page=readingPages(scene)[b.part??0];if(!page)throw new AppError(404,'没有这段语音');text=page.en;}
   else text=step.kind==='speak'?scene.message:materialText(scene);
  }
  await quota(owner);const audio=await speech(text,kind,privateOwner);
